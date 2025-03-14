@@ -5,11 +5,10 @@ import { calculateDestination } from '../utils/geoUtils';
 
 interface ShipProps {
   ship: ShipType;
-  isChangingCourseOrSpeed: boolean;
   isDarkMode?: boolean;
 }
 
-export const Ship: React.FC<ShipProps> = ({ ship, isChangingCourseOrSpeed, isDarkMode = false }) => {
+export const Ship: React.FC<ShipProps> = ({ ship, isDarkMode = false }) => {
   // Calculate corner points for ship rectangle
   const cornerPoints = [
     // Bow (front)
@@ -78,10 +77,10 @@ export const Ship: React.FC<ShipProps> = ({ ship, isChangingCourseOrSpeed, isDar
       pathOptions={{
         color: ship.status === 'disabled' || ship.status === 'aground' ? 
           (isDarkMode ? '#ffffff' : (ship.status === 'disabled' ? '#000000' : '#595959')) : 
-          (ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#1890ff')),
+          ship.color,
         fillColor: ship.status === 'disabled' || ship.status === 'aground' ? 
           (isDarkMode ? '#ffffff' : (ship.status === 'disabled' ? '#000000' : '#595959')) : 
-          (ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff')),
+          ship.color,
         fillOpacity: ship.status === 'disabled' || ship.status === 'aground' ? 0.9 : 0.8,
         weight: 2
       }}

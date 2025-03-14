@@ -3,6 +3,20 @@ import { generateRandomPointAtDistance } from './geoUtils';
 import { SPAWN_POINT, SPAWN_RADIUS_NM } from '../config/constants';
 import { shipNames } from '../data/shipNames';
 
+// Predefined set of visually distinct colors
+const shipColors = [
+  '#1890ff', // Blue
+  '#52c41a', // Green
+  '#722ed1', // Purple
+  '#fa8c16', // Orange
+  '#eb2f96', // Pink
+  '#13c2c2', // Cyan
+  '#fadb14', // Yellow
+  '#f5222d', // Red
+  '#2f54eb', // Indigo
+  '#fa541c', // Volcano
+];
+
 const shipTypes = ['cargo', 'tanker', 'passenger', 'fishing'];
 
 // Keep track of used ship names to avoid duplicates
@@ -65,6 +79,7 @@ export function generateRandomShips(count: number): Ship[] {
       collisionRisks: [],
       turnRate: 2, // Initial turn rate of 2 degrees per minute
       avoidingLand: false, // Initialize not avoiding land
+      color: shipColors[index % shipColors.length] // Assign a unique color from the predefined set
     };
   });
 }

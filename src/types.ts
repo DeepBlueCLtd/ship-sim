@@ -47,6 +47,8 @@ export interface Ship {
   type: string;
   /** Current status of the ship */
   status: 'underway' | 'anchored' | 'moored' | 'aground' | 'disabled';
+  /** Unique color for the ship */
+  color: string;
   /** Trail of previous positions and states (most recent first) */
   trail: Array<{
     latitude: number;

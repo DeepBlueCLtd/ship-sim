@@ -9,13 +9,7 @@ interface ShipCardsProps {
 export const ShipCards: React.FC<ShipCardsProps> = ({ ships }) => {
   return (
     <Row gutter={[4, 4]} style={{ margin: '0 -2px', flexWrap: 'wrap' }}>
-      {Object.values(ships).map((ship) => {
-        const isChangingCourseOrSpeed = 
-          (ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading) || 
-          (ship.demandedSpeed !== undefined && ship.demandedSpeed !== ship.speed) ||
-          ship.avoidingLand;
-
-        return (
+      {ships.map((ship) => (
           <Col xs={24} sm={12} md={8} key={ship.id} style={{ marginBottom: '4px' }}>
             <Card 
             title={<span style={{ fontSize: '12px', fontWeight: 'bold' }}>{ship.name}</span>}
@@ -24,10 +18,7 @@ export const ShipCards: React.FC<ShipCardsProps> = ({ ships }) => {
             bodyStyle={{ padding: '4px 8px' }}
             style={{ 
               width: '100%',
-              borderLeft: ship.status === 'disabled' ? '3px solid #000000' : 
-                         ship.status === 'aground' ? '3px solid #595959' : 
-                         isChangingCourseOrSpeed ? '3px solid #ff4d4f' : 
-                         '3px solid #1890ff'
+              borderLeft: `3px solid ${ship.color}`
             }}
           >
             <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
@@ -86,8 +77,7 @@ export const ShipCards: React.FC<ShipCardsProps> = ({ ships }) => {
             </div>
             </Card>
           </Col>
-        );
-      })}
+      ))}
     </Row>
   );
 };

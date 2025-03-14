@@ -79,10 +79,6 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
         />
       ))}
       {ships.map((ship) => {
-        const isChangingCourseOrSpeed = 
-          (ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading) || 
-          (ship.demandedSpeed !== undefined && ship.demandedSpeed !== ship.speed) || 
-          ship.avoidingLand;
         return (
           <React.Fragment key={ship.id}>
             {/* Draw layers in order: detection range, collision indicators, trail, cone, ship */}
@@ -172,8 +168,8 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
               center={[ship.position.latitude, ship.position.longitude]}
               radius={4 * 1852} // 4nm in meters
               pathOptions={{
-                color: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
-                fillColor: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
+                color: ship.color,
+                fillColor: ship.color,
                 fillOpacity: 0.05,
                 weight: 1,
                 dashArray: '5,5'
@@ -189,7 +185,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                 [ship.position.latitude, ship.position.longitude] as [number, number] // Current position last
               ] as [number, number][]}
               pathOptions={{
-                color: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
+                color: ship.color,
                 opacity: 0.4, // Reduced opacity to make cones more visible
                 weight: 2
               }}
@@ -237,8 +233,8 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                 )
               ]}
               pathOptions={{
-                color: isChangingCourseOrSpeed ? '#ff4d4f' : '#1890ff',
-                fillColor: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
+                color: ship.color,
+                fillColor: ship.color,
                 fillOpacity: 0.1,
                 weight: 1
               }}
@@ -296,7 +292,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
             {/* Ship with dimensions */}
             <Ship
               ship={ship}
-              isChangingCourseOrSpeed={isChangingCourseOrSpeed}
+
               isDarkMode={isDarkMode}
             />
           </React.Fragment>
