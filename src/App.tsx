@@ -122,32 +122,43 @@ function App() {
 
           // Update demanded course and speed based on collision avoidance
           if (clearHeading === undefined && ship.collisionRisks.length === 0) {
-            // No collision risk, clear collision avoidance course
+            // No collision risk, clear collision avoidance
             if (ship.demandedCourse !== undefined) {
               ship.demandedCourse = undefined;
               ship.avoidingLand = false;
             }
-            // Restore normal speed if we were avoiding something
+            // Return to normal speed (if stored) once collision risk clears
             if (ship.normalSpeed !== undefined) {
               ship.demandedSpeed = ship.normalSpeed;
               ship.normalSpeed = undefined;
             }
-          } else {
-            // Collision risk detected
+          } else if (ship.normalSpeed === undefined) {
+            // First time detecting collision risk
+            
+            // Set collision avoidance course if needed
             if (clearHeading !== ship.heading) {
-              // Set new collision avoidance course
               ship.demandedCourse = clearHeading;
               ship.avoidingLand = isHeadingTowardsLand;
             }
-            // Store normal speed if ship has a demanded speed and isn't already avoiding
-            if (ship.normalSpeed === undefined && ship.demandedSpeed !== undefined) {
+            
+            // 1. If ship has a demanded speed, store it as normal speed
+            if (ship.demandedSpeed !== undefined) {
               ship.normalSpeed = ship.demandedSpeed;
             }
-            // Reduce to 2/3 of normal or current speed
+            
+            // 2. Calculate target speed as 2/3 of either normal speed or current speed
             const baseSpeed = ship.normalSpeed ?? ship.speed;
             const targetSpeed = baseSpeed * 0.67;
+            
+            // Only set demanded speed if undefined or higher than target
             if (ship.demandedSpeed === undefined || ship.demandedSpeed > targetSpeed) {
               ship.demandedSpeed = targetSpeed;
+            }
+          } else {
+            // Already avoiding collision, just update course if needed
+            if (clearHeading !== ship.heading) {
+              ship.demandedCourse = clearHeading;
+              ship.avoidingLand = isHeadingTowardsLand;
             }
           }
         });
