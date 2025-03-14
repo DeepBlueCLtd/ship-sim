@@ -6,7 +6,10 @@ const regions = {
   dorset: gbData.features.find(f => f.properties.id === 'GBDOR'),
   hampshire: gbData.features.find(f => f.properties.id === 'GBHAM'),
   bournemouth: gbData.features.find(f => f.properties.id === 'GBBMH'),
-  westSussex: gbData.features.find(f => f.properties.id === 'GBWSX')
+  westSussex: gbData.features.find(f => f.properties.id === 'GBWSX'),
+  portsmouth: gbData.features.find(f => f.properties.id === 'GBPOR'),
+  southampton: gbData.features.find(f => f.properties.id === 'GBSTH'),
+  poole: gbData.features.find(f => f.properties.id === 'GBPOL')
 };
 
 // Convert GeoJSON coordinates to [lon, lat] format for collision detection

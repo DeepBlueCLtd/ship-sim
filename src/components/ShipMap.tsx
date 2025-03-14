@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Polyline, Circle
 import { calculateDestination } from '../utils/geoUtils';
 import 'leaflet/dist/leaflet.css';
 import { ShipDictionary } from '../types';
-import gbData from '../assets/gb.json';
+import { displayPolygons } from '../data/landPolygons';
 import { ShipHeading } from './ShipHeading';
 import { CompassRose } from './CompassRose';
 import { MouseCoordinates } from './MouseCoordinates';
@@ -14,27 +14,6 @@ interface ShipMapProps {
 }
 
 export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 30 }) => {
-  // Get region polygons
-  const regions = {
-    iow: gbData.features.find(f => f.properties.id === 'GBIOW'),
-    dorset: gbData.features.find(f => f.properties.id === 'GBDOR'),
-    hampshire: gbData.features.find(f => f.properties.id === 'GBHAM'),
-    bournemouth: gbData.features.find(f => f.properties.id === 'GBBMH')
-  };
-
-  // Convert GeoJSON coordinates to Leaflet format (swap lat/long)
-  const getPolygonCoords = (feature: typeof regions.iow) => {
-    return feature
-      ? feature.geometry.coordinates[0].map(coord => [coord[1], coord[0]] as [number, number])
-      : [] as [number, number][];
-  };
-
-  const polygons = {
-    iow: getPolygonCoords(regions.iow),
-    dorset: getPolygonCoords(regions.dorset),
-    hampshire: getPolygonCoords(regions.hampshire),
-    bournemouth: getPolygonCoords(regions.bournemouth)
-  };
 
   return (
     <MapContainer
@@ -64,51 +43,19 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
         }}
       />
 
-      {/* Display region polygons */}
-      {polygons.hampshire.length > 0 && (
+      {/* Display land polygons */}
+      {displayPolygons.map((polygon, index) => (
         <Polygon
-          positions={polygons.hampshire}
+          key={index}
+          positions={polygon}
           pathOptions={{
             color: '#389e0d',
             fillColor: '#389e0d',
-            fillOpacity: 0.1,
+            fillOpacity: 0.3,
             weight: 1
           }}
         />
-      )}
-      {polygons.bournemouth.length > 0 && (
-        <Polygon
-          positions={polygons.bournemouth}
-          pathOptions={{
-            color: '#722ed1',
-            fillColor: '#722ed1',
-            fillOpacity: 0.1,
-            weight: 1
-          }}
-        />
-      )}
-      {polygons.dorset.length > 0 && (
-        <Polygon
-          positions={polygons.dorset}
-          pathOptions={{
-            color: '#d48806',
-            fillColor: '#d48806',
-            fillOpacity: 0.1,
-            weight: 1
-          }}
-        />
-      )}
-      {polygons.iow.length > 0 && (
-        <Polygon
-          positions={polygons.iow}
-          pathOptions={{
-            color: '#1890ff',
-            fillColor: '#1890ff',
-            fillOpacity: 0.2,
-            weight: 2
-          }}
-        />
-      )}
+      ))}
       {Object.values(ships).map((ship) => {
         const isChangingCourseOrSpeed = 
           (ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading) || 
@@ -282,21 +229,32 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                 )}
                 radius={0}
               >
-                <Tooltip permanent={true} direction='top'>
-                  <div style={{ textAlign: 'center' }}>
-                    {ship.heading.toFixed(0)}°
-                    {ship.turnRate !== 0 && (
-                      <div style={{ fontSize: '0.9em', color: ship.turnRate > 0 ? '#ff7875' : '#91d5ff' }}>
-                        {ship.turnRate > 0 ? '↻' : '↺'} {Math.abs(ship.turnRate).toFixed(1)}°/min
-                      </div>
-                    )}
-                    {ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading && (
-                      <div style={{ fontSize: '0.9em', color: '#ff7875' }}>
-                        → {ship.demandedCourse.toFixed(0)}° ({((((ship.demandedCourse - ship.heading + 540) % 360) - 180)).toFixed(0)}°)
-                      </div>
-                    )}
-                  </div>
-                </Tooltip>
+                {(ship.avoidingLand || ship.collisionRisks.length > 0) && (
+                  <Tooltip permanent={true} direction='top'>
+                    <div style={{ textAlign: 'center' }}>
+                      {/* Show what we're avoiding */}
+                      {ship.avoidingLand && (
+                        <div style={{ color: '#ff4d4f', fontWeight: 'bold' }}>⚠️ Avoiding Land</div>
+                      )}
+                      {ship.collisionRisks.length > 0 && (
+                        <div style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+                          ⚠️ Avoiding {ship.collisionRisks.length} ship{ship.collisionRisks.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                      {/* Always show current course when avoiding */}
+                      <div>Current: {ship.heading.toFixed(0)}°</div>
+                      {/* Show demanded course if different */}
+                      {ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading && (
+                        <div style={{ color: '#ff7875' }}>
+                          Demanded: {ship.demandedCourse.toFixed(0)}°
+                          <div style={{ fontSize: '0.9em' }}>
+                            (Turn {Math.abs(((((ship.demandedCourse - ship.heading + 540) % 360) - 180))).toFixed(0)}° {((((ship.demandedCourse - ship.heading + 540) % 360) - 180)) > 0 ? 'starboard' : 'port'})
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Tooltip>
+                )}
               </CircleMarker>
             </Polygon>
 

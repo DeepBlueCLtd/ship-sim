@@ -19,7 +19,8 @@ function App() {
     timestamp: new Date(),
     running: false,
     trailLength: MAX_TRAIL_LENGTH, // Store 2 hours of positions
-    displayedTrailLength: 30 // Default to showing 30 positions
+    displayedTrailLength: 30, // Default to showing 30 positions
+    stepInterval: 200 // Default to 5 steps/sec
   });
 
   const handleTrailLengthChange = useCallback((newLength: number) => {
@@ -145,10 +146,17 @@ function App() {
 
         return updatedShips;
       });
-    }, 2000); // Update every 2 seconds
+    }, simulationTime.stepInterval);
 
     return () => clearInterval(interval);
-  }, [simulationTime.running, simulationTime.timestamp, simulationTime.trailLength]);
+  }, [simulationTime.running, simulationTime.stepInterval, simulationTime.timestamp]);
+
+  const handleStepIntervalChange = useCallback((stepsPerSecond: number) => {
+    setSimulationTime(prev => ({
+      ...prev,
+      stepInterval: Math.round(1000 / stepsPerSecond)
+    }));
+  }, []);
 
   const toggleSimulation = useCallback(() => {
     setSimulationTime(prev => ({
@@ -174,6 +182,7 @@ function App() {
           simulationTime={simulationTime}
           onToggleSimulation={toggleSimulation}
           onTrailLengthChange={handleTrailLengthChange}
+          onStepIntervalChange={handleStepIntervalChange}
           ships={ships}
         />
       </Layout.Sider>
