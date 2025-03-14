@@ -35,6 +35,8 @@ export interface Ship {
   speed: number;
   /** Demanded speed in knots */
   demandedSpeed?: number;
+  /** Normal speed to return to after collision avoidance */
+  normalSpeed?: number;
   /** Ship dimensions */
   dimensions: {
     length: number;  // meters

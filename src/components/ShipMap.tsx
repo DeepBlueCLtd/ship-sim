@@ -241,14 +241,24 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                           ⚠️ Avoiding {ship.collisionRisks.length} ship{ship.collisionRisks.length > 1 ? 's' : ''}
                         </div>
                       )}
-                      {/* Always show current course when avoiding */}
+                      {/* Always show current course and speed when avoiding */}
                       <div>Current: {ship.heading.toFixed(0)}°</div>
+                      <div>Speed: {ship.speed.toFixed(1)} kts</div>
                       {/* Show demanded course if different */}
                       {ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading && (
                         <div style={{ color: '#ff7875' }}>
                           Demanded: {ship.demandedCourse.toFixed(0)}°
                           <div style={{ fontSize: '0.9em' }}>
                             (Turn {Math.abs(((((ship.demandedCourse - ship.heading + 540) % 360) - 180))).toFixed(0)}° {((((ship.demandedCourse - ship.heading + 540) % 360) - 180)) > 0 ? 'starboard' : 'port'})
+                          </div>
+                        </div>
+                      )}
+                      {/* Show speed reduction during avoidance */}
+                      {ship.demandedSpeed !== undefined && ship.demandedSpeed !== ship.speed && (
+                        <div style={{ color: '#ff7875' }}>
+                          Demanded: {ship.demandedSpeed.toFixed(1)} kts
+                          <div style={{ fontSize: '0.9em' }}>
+                            ({((ship.demandedSpeed / (ship.normalSpeed ?? ship.speed)) * 100).toFixed(0)}% of {ship.normalSpeed !== undefined ? 'normal' : 'current'} speed)
                           </div>
                         </div>
                       )}
@@ -282,7 +292,14 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                       <span style={{ color: ship.demandedSpeed !== ship.speed ? '#ff4d4f' : '#52c41a' }}>
                         {' '}→ {ship.demandedSpeed.toFixed(1)} knots
                         {ship.demandedSpeed !== ship.speed && (
-                          <span> ({(ship.demandedSpeed - ship.speed > 0 ? '+' : '')}{(ship.demandedSpeed - ship.speed).toFixed(1)})</span>
+                          <>
+                            <span> ({(ship.demandedSpeed - ship.speed > 0 ? '+' : '')}{(ship.demandedSpeed - ship.speed).toFixed(1)})</span>
+                            {(ship.avoidingLand || ship.collisionRisks.length > 0) && (
+                              <span style={{ display: 'block', marginLeft: '12px', fontSize: '0.9em' }}>
+                                {((ship.demandedSpeed / (ship.normalSpeed ?? ship.speed)) * 100).toFixed(0)}% of {ship.normalSpeed !== undefined ? 'normal' : 'current'} speed
+                              </span>
+                            )}
+                          </>
                         )}
                       </span>
                     )}

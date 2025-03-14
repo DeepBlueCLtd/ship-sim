@@ -38,6 +38,7 @@ export function generateRandomShips(count: number): Ship[] {
       speed,
       demandedCourse,
       demandedSpeed,
+      normalSpeed: demandedSpeed !== undefined ? demandedSpeed : undefined,
       dimensions: {
         length: getRandomInRange(100, 300),
         beam: getRandomInRange(15, 40),

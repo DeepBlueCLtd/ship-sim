@@ -83,17 +83,35 @@ function App() {
             isConeIntersectingPolygon(ship.position.latitude, ship.position.longitude, ship.heading, 2, 15, polygon)
           );
 
-          // Update demanded course based on collision avoidance
-          if (clearHeading === undefined) {
-            // No collision risk, clear any collision avoidance course
+          // Update demanded course and speed based on collision avoidance
+          if (clearHeading === undefined && ship.collisionRisks.length === 0) {
+            // No collision risk, clear collision avoidance course
             if (ship.demandedCourse !== undefined) {
               ship.demandedCourse = undefined;
               ship.avoidingLand = false;
             }
-          } else if (clearHeading !== ship.heading) {
-            // Set new collision avoidance course
-            ship.demandedCourse = clearHeading;
-            ship.avoidingLand = isHeadingTowardsLand;
+            // Restore normal speed if we were avoiding something
+            if (ship.normalSpeed !== undefined) {
+              ship.demandedSpeed = ship.normalSpeed;
+              ship.normalSpeed = undefined;
+            }
+          } else {
+            // Collision risk detected
+            if (clearHeading !== ship.heading) {
+              // Set new collision avoidance course
+              ship.demandedCourse = clearHeading;
+              ship.avoidingLand = isHeadingTowardsLand;
+            }
+            // Store normal speed if ship has a demanded speed and isn't already avoiding
+            if (ship.normalSpeed === undefined && ship.demandedSpeed !== undefined) {
+              ship.normalSpeed = ship.demandedSpeed;
+            }
+            // Reduce to 2/3 of normal or current speed
+            const baseSpeed = ship.normalSpeed ?? ship.speed;
+            const targetSpeed = baseSpeed * 0.67;
+            if (ship.demandedSpeed === undefined || ship.demandedSpeed > targetSpeed) {
+              ship.demandedSpeed = targetSpeed;
+            }
           }
         });
 
