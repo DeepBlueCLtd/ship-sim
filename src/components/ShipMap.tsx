@@ -10,9 +10,10 @@ import React from 'react';
 
 interface ShipMapProps {
   ships: ShipDictionary;
+  displayedTrailLength?: number;
 }
 
-export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
+export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 30 }) => {
   // Get region polygons
   const regions = {
     iow: gbData.features.find(f => f.properties.id === 'GBIOW'),
@@ -111,7 +112,8 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
       {Object.values(ships).map((ship) => {
         const isChangingCourseOrSpeed = 
           (ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading) || 
-          (ship.demandedSpeed !== undefined && ship.demandedSpeed !== ship.speed);
+          (ship.demandedSpeed !== undefined && ship.demandedSpeed !== ship.speed) || 
+          ship.avoidingLand;
         return (
           <React.Fragment key={ship.id}>
             {/* Draw layers in order: detection range, collision indicators, trail, cone, ship */}
@@ -212,7 +214,9 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
             <Polyline
               positions={[
                 [ship.position.latitude, ship.position.longitude] as [number, number],
-                ...(ship.trail.length > 0 ? ship.trail.map(pos => [pos.latitude, pos.longitude] as [number, number]) : [])
+                ...(ship.trail.length > 0 ? ship.trail
+                  .slice(0, displayedTrailLength)
+                  .map(pos => [pos.latitude, pos.longitude] as [number, number]) : [])
               ] as [number, number][]}
               pathOptions={{
                 color: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
@@ -310,6 +314,9 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
               <Popup>
                 <div>
                   <h3>{ship.name}</h3>
+                  {ship.avoidingLand && (
+                    <p style={{ color: '#ff4d4f' }}>⚠️ Avoiding Land</p>
+                  )}
                   <p>Type: {ship.type}</p>
                   <p>
                     Speed: {ship.speed.toFixed(1)} knots

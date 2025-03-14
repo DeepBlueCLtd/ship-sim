@@ -450,11 +450,85 @@ export function isConeBlocked(
 }
 
 /**
+ * Check if a point is inside a polygon
+ * @param point - [longitude, latitude] coordinates
+ * @param polygon - Array of [longitude, latitude] coordinates forming a polygon
+ * @returns boolean indicating if point is inside polygon
+ */
+export function isPointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
+  const [x, y] = point;
+  let inside = false;
+  
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    
+    const intersect = ((yi > y) !== (yj > y)) &&
+      (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  
+  return inside;
+}
+
+/**
+ * Check if a cone intersects with a polygon
+ * @param apexLat - Latitude of cone apex
+ * @param apexLon - Longitude of cone apex
+ * @param heading - Direction cone is pointing (0-359 degrees)
+ * @param radius - Radius of cone in nautical miles
+ * @param angle - Half-angle of cone in degrees
+ * @param polygon - Array of [longitude, latitude] coordinates forming a polygon
+ * @returns boolean indicating if cone intersects polygon
+ */
+export function isConeIntersectingPolygon(
+  apexLat: number,
+  apexLon: number,
+  heading: number,
+  radius: number,
+  angle: number,
+  polygon: [number, number][]
+): boolean {
+  // Check if apex is inside polygon
+  if (isPointInPolygon([apexLon, apexLat], polygon)) return true;
+
+  // Generate points along cone edges
+  const numPoints = 10;
+  const leftEdgePoints: [number, number][] = [];
+  const rightEdgePoints: [number, number][] = [];
+  
+  for (let i = 0; i <= numPoints; i++) {
+    const dist = (radius * i) / numPoints;
+    const [leftLat, leftLon] = calculateDestination(apexLat, apexLon, dist, (heading - angle + 360) % 360);
+    const [rightLat, rightLon] = calculateDestination(apexLat, apexLon, dist, (heading + angle + 360) % 360);
+    leftEdgePoints.push([leftLon, leftLat]);
+    rightEdgePoints.push([rightLon, rightLat]);
+  }
+
+  // Combine points to form cone polygon
+  const conePolygon = [...leftEdgePoints, ...rightEdgePoints.reverse()];
+
+  // Check if any polygon point is inside cone
+  for (const point of polygon) {
+    if (isPointInPolygon(point, conePolygon)) return true;
+  }
+
+  // Check if any cone point is inside polygon
+  for (const point of conePolygon) {
+    if (isPointInPolygon(point, polygon)) return true;
+  }
+
+  return false;
+}
+
+/**
  * Find a clear heading by checking cones at increasing angles to starboard
  * @param shipLat - Ship's latitude
  * @param shipLon - Ship's longitude
  * @param currentHeading - Ship's current heading
- * @param otherShips - Array of positions to check
+ * @param speed - Ship speed in knots
+ * @param otherShips - Array of other ships to avoid
+ * @param landPolygons - Array of land polygons to avoid
  * @returns Clear heading or undefined if no clear heading found
  */
 export function findClearHeading(
@@ -462,7 +536,8 @@ export function findClearHeading(
   shipLon: number,
   currentHeading: number,
   speed: number,
-  otherShips: Array<{ latitude: number; longitude: number; heading: number; speed: number }>
+  otherShips: Array<{ latitude: number; longitude: number; heading: number; speed: number }>,
+  landPolygons: Array<[number, number][]>
 ): number | undefined {
   // Calculate bearing to each ship
   const bearings = otherShips.map(other => ({
@@ -470,20 +545,32 @@ export function findClearHeading(
     distance: calculateDistance(shipLat, shipLon, other.latitude, other.longitude)
   }));
 
-  // If no ships are within 4nm, no need to change course
-  if (!bearings.some(b => b.distance < 4)) {
+  // If no ships are within 4nm and we're not heading towards land, no need to change course
+  if (!bearings.some(b => b.distance < 4) && 
+      !landPolygons.some(polygon => isConeIntersectingPolygon(shipLat, shipLon, currentHeading, 2, 15, polygon))) {
     return undefined;
   }
 
   // Check current heading first
-  if (!isConeBlocked(shipLat, shipLon, currentHeading, speed, otherShips)) {
+  if (!isConeBlocked(shipLat, shipLon, currentHeading, speed, otherShips) &&
+      !landPolygons.some(polygon => isConeIntersectingPolygon(shipLat, shipLon, currentHeading, 2, 15, polygon))) {
     return currentHeading;
   }
 
   // Try increasingly larger turns to starboard (10 degree increments)
   for (let turn = 10; turn <= 180; turn += 10) {
     const newHeading = (currentHeading + turn) % 360;
-    if (!isConeBlocked(shipLat, shipLon, newHeading, speed, otherShips)) {
+    if (!isConeBlocked(shipLat, shipLon, newHeading, speed, otherShips) &&
+        !landPolygons.some(polygon => isConeIntersectingPolygon(shipLat, shipLon, newHeading, 2, 15, polygon))) {
+      return newHeading;
+    }
+  }
+
+  // If no clear heading found to starboard, try port side
+  for (let turn = 10; turn <= 180; turn += 10) {
+    const newHeading = (currentHeading - turn + 360) % 360;
+    if (!isConeBlocked(shipLat, shipLon, newHeading, speed, otherShips) &&
+        !landPolygons.some(polygon => isConeIntersectingPolygon(shipLat, shipLon, newHeading, 2, 15, polygon))) {
       return newHeading;
     }
   }

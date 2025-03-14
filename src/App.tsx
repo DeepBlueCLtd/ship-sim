@@ -4,23 +4,28 @@ import { ControlPanel } from './components/ControlPanel';
 import { ShipMap } from './components/ShipMap';
 import { ShipDictionary, SimulationTime } from './types';
 import { generateRandomShips } from './utils/shipGenerator';
-import { calculateShipMovement, calculateNewHeading, calculateNewSpeed, findClearHeading, findCollisionRisks } from './utils/geoUtils';
+import { calculateShipMovement, calculateNewHeading, calculateNewSpeed, findClearHeading, findCollisionRisks, isConeIntersectingPolygon } from './utils/geoUtils';
+import { landPolygons } from './data/landPolygons';
 import './App.css';
 
 const { Content } = Layout;
 
 function App() {
   const [ships, setShips] = useState<ShipDictionary>({});
+  // Store up to 120 positions (2 hours at 1-minute intervals)
+  const MAX_TRAIL_LENGTH = 120;
+
   const [simulationTime, setSimulationTime] = useState<SimulationTime>({
     timestamp: new Date(),
     running: false,
-    trailLength: 30 // Default to 30 positions
+    trailLength: MAX_TRAIL_LENGTH, // Store 2 hours of positions
+    displayedTrailLength: 30 // Default to showing 30 positions
   });
 
   const handleTrailLengthChange = useCallback((newLength: number) => {
     setSimulationTime(prev => ({
       ...prev,
-      trailLength: newLength
+      displayedTrailLength: newLength
     }));
   }, []);
 
@@ -68,7 +73,13 @@ function App() {
             ship.position.longitude,
             ship.heading,
             ship.speed,
-            otherShips
+            otherShips,
+            landPolygons
+          );
+
+          // Check if current heading intersects with land
+          const isHeadingTowardsLand = landPolygons.some(polygon => 
+            isConeIntersectingPolygon(ship.position.latitude, ship.position.longitude, ship.heading, 2, 15, polygon)
           );
 
           // Update demanded course based on collision avoidance
@@ -76,10 +87,12 @@ function App() {
             // No collision risk, clear any collision avoidance course
             if (ship.demandedCourse !== undefined) {
               ship.demandedCourse = undefined;
+              ship.avoidingLand = false;
             }
           } else if (clearHeading !== ship.heading) {
             // Set new collision avoidance course
             ship.demandedCourse = clearHeading;
+            ship.avoidingLand = isHeadingTowardsLand;
           }
         });
 
@@ -102,9 +115,9 @@ function App() {
             1
           );
           
-          // Add current position to trail (limit to specified length)
+          // Add current position to trail (limit to maximum length)
           ship.trail = [
-            ...ship.trail.slice(-(simulationTime.trailLength - 1)),
+            ...ship.trail.slice(-(MAX_TRAIL_LENGTH - 1)),
             {
               latitude: ship.position.latitude,
               longitude: ship.position.longitude,
@@ -155,16 +168,17 @@ function App() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Layout.Sider width={300} style={{ background: '#fff' }}>
+      <Layout.Sider width={500} style={{ background: '#fff' }}>
         <ControlPanel 
           onInitialize={handleInitialize}
           simulationTime={simulationTime}
           onToggleSimulation={toggleSimulation}
           onTrailLengthChange={handleTrailLengthChange}
+          ships={ships}
         />
       </Layout.Sider>
       <Content>
-        <ShipMap ships={ships} />
+        <ShipMap ships={ships} displayedTrailLength={simulationTime.displayedTrailLength} />
       </Content>
     </Layout>
   );

@@ -47,7 +47,8 @@ export function generateRandomShips(count: number): Ship[] {
       status: 'underway',
       trail: [],
       collisionRisks: [],
-      turnRate: 0, // Initialize with no turn
+      turnRate: 2, // Initial turn rate of 2 degrees per minute
+      avoidingLand: false, // Initialize not avoiding land
     };
   });
 }

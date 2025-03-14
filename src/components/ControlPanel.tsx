@@ -1,6 +1,7 @@
 import { Button, Layout, Typography, Space, Slider } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
-import { SimulationTime } from '../types';
+import { SimulationTime, ShipDictionary } from '../types';
+import { ShipCards } from './ShipCards';
 
 const { Sider } = Layout;
 
@@ -9,13 +10,15 @@ interface ControlPanelProps {
   simulationTime: SimulationTime;
   onToggleSimulation: () => void;
   onTrailLengthChange: (length: number) => void;
+  ships: ShipDictionary;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({ 
   onInitialize,
   simulationTime,
   onToggleSimulation,
-  onTrailLengthChange
+  onTrailLengthChange,
+  ships
 }) => {
   // Format the time as HH:mm
   const formattedTime = simulationTime.timestamp.toLocaleTimeString('en-GB', {
@@ -24,7 +27,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   });
 
   return (
-    <Sider width={300} style={{ background: '#fff', padding: '20px' }}>
+    <Sider width={500} style={{ background: '#fff', padding: '20px' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <div>
           <Typography.Title level={4} style={{ margin: 0 }}>
@@ -73,6 +76,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               {simulationTime.running ? 'Pause Simulation' : 'Start Simulation'}
             </Button>
           </Space>
+        </Space>
+
+        {/* Ship status cards */}
+        <Space direction="vertical" style={{ width: '100%' }} size="small">
+          <Typography.Title level={5} style={{ margin: '8px 0', fontSize: '14px' }}>
+            Ship Status
+          </Typography.Title>
+          <ShipCards ships={ships} />
         </Space>
       </Space>
     </Sider>

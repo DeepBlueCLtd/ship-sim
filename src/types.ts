@@ -53,6 +53,8 @@ export interface Ship {
   }>;
   /** List of ships that pose collision risks */
   collisionRisks: CollisionRisk[];
+  /** Whether the ship is currently avoiding land */
+  avoidingLand: boolean;
 }
 
 /**
@@ -72,4 +74,8 @@ export interface SimulationTime {
   running: boolean;
   /** Maximum number of positions to keep in ship trails */
   trailLength: number;
+  /** Number of trail positions to display on the map */
+  displayedTrailLength: number;
+  /** Interval between simulation steps in milliseconds (100-1000) */
+  stepInterval: number;
 }
