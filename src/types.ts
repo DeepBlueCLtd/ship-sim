@@ -1,11 +1,18 @@
 /**
  * Represents a ship in the simulation
  */
+export interface CollisionPoint {
+  latitude: number;
+  longitude: number;
+  timeToCollision: number; // minutes
+}
+
 export interface CollisionRisk {
   shipId: string;
   bearing: number;
   distance: number;
   relativeSpeed: number;
+  collisionPoint?: CollisionPoint;
 }
 
 export interface Ship {

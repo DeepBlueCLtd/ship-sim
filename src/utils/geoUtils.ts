@@ -310,6 +310,13 @@ export function calculateCollisionPoint(
   // If ships aren't moving relative to each other, no collision
   if (Math.abs(a) < 1e-10) return undefined;
 
+  // Solve quadratic equation at^2 + bt + c = 0
+  // Discriminant b^2 - 4ac tells us if there's a real solution
+  const discriminant = b * b - 4 * a * c;
+  if (discriminant < 0) return undefined; // No real solutions
+
+  // Time to closest point of approach (CPA)
+  // Using -b/(2a) which gives us the time of minimum separation
   const t = -b / (2 * a); // Time to CPA in minutes
 
   // If time is negative, ships are moving apart

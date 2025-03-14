@@ -58,10 +58,8 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
         radius={8 * 1852} // Convert 8nm to meters (1nm = 1852m)
         pathOptions={{
           color: '#1890ff',
-          fillColor: '#1890ff',
-          fillOpacity: 0.05,
-          weight: 1,
-          dashArray: '5,5'
+          fillOpacity: 0,
+          weight: 3
         }}
       />
 
@@ -111,7 +109,9 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
         />
       )}
       {Object.values(ships).map((ship) => {
-        const isChangingCourseOrSpeed = ship.demandedCourse !== undefined || ship.demandedSpeed !== undefined;
+        const isChangingCourseOrSpeed = 
+          (ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading) || 
+          (ship.demandedSpeed !== undefined && ship.demandedSpeed !== ship.speed);
         return (
           <React.Fragment key={ship.id}>
             {/* Draw layers in order: detection range, collision indicators, trail, cone, ship */}
@@ -139,9 +139,59 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
                       <div style={{ textAlign: 'center' }}>
                         <div>Distance: {risk.distance.toFixed(1)}nm</div>
                         <div>Rel. Speed: {(-risk.relativeSpeed).toFixed(1)}kts</div>
+                        {risk.collisionPoint && (
+                          <div>Time: {risk.collisionPoint.timeToCollision.toFixed(1)}min</div>
+                        )}
                       </div>
                     </Tooltip>
                   </Polyline>
+
+                  {/* Predicted collision point */}
+                  {risk.collisionPoint && (
+                    <React.Fragment>
+                      {/* Collision point marker */}
+                      <CircleMarker
+                        center={[risk.collisionPoint.latitude, risk.collisionPoint.longitude]}
+                        radius={4}
+                        pathOptions={{
+                          color: '#ff4d4f',
+                          fillColor: '#fff',
+                          fillOpacity: 1,
+                          weight: 2
+                        }}
+                      >
+                        <Tooltip permanent={true} direction='top'>
+                          <div style={{ textAlign: 'center' }}>
+                            ⚠️ Collision in {risk.collisionPoint.timeToCollision.toFixed(1)}min
+                          </div>
+                        </Tooltip>
+                      </CircleMarker>
+
+                      {/* Ship paths to collision point */}
+                      <Polyline
+                        positions={[
+                          [ship.position.latitude, ship.position.longitude],
+                          [risk.collisionPoint.latitude, risk.collisionPoint.longitude]
+                        ]}
+                        pathOptions={{
+                          color: '#ff4d4f',
+                          weight: 1,
+                          opacity: 0.4
+                        }}
+                      />
+                      <Polyline
+                        positions={[
+                          [otherShip.position.latitude, otherShip.position.longitude],
+                          [risk.collisionPoint.latitude, risk.collisionPoint.longitude]
+                        ]}
+                        pathOptions={{
+                          color: '#ff4d4f',
+                          weight: 1,
+                          opacity: 0.4
+                        }}
+                      />
+                    </React.Fragment>
+                  )}
                 </React.Fragment>
               );
             })}
@@ -219,7 +269,14 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
               }}
             >
               <Tooltip permanent={true} direction='center' offset={[0, -20]}>
-                {ship.heading.toFixed(0)}°
+                <div style={{ textAlign: 'center' }}>
+                  {ship.heading.toFixed(0)}°
+                  {ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading && (
+                    <div style={{ fontSize: '0.9em', color: '#ff7875' }}>
+                      → {ship.demandedCourse.toFixed(0)}° ({((((ship.demandedCourse - ship.heading + 540) % 360) - 180)).toFixed(0)}°)
+                    </div>
+                  )}
+                </div>
               </Tooltip>
             </Polygon>
 
@@ -238,8 +295,28 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
                 <div>
                   <h3>{ship.name}</h3>
                   <p>Type: {ship.type}</p>
-                  <p>Speed: {ship.speed.toFixed(1)} knots {ship.demandedSpeed ? `(Demanded: ${ship.demandedSpeed.toFixed(1)})` : ''}</p>
-                  <p>Heading: {ship.heading.toFixed(1)}° {ship.demandedCourse ? `(Demanded: ${ship.demandedCourse.toFixed(1)}°)` : ''}</p>
+                  <p>
+                    Speed: {ship.speed.toFixed(1)} knots
+                    {ship.demandedSpeed !== undefined && (
+                      <span style={{ color: ship.demandedSpeed !== ship.speed ? '#ff4d4f' : '#52c41a' }}>
+                        {' '}→ {ship.demandedSpeed.toFixed(1)} knots
+                        {ship.demandedSpeed !== ship.speed && (
+                          <span> ({(ship.demandedSpeed - ship.speed > 0 ? '+' : '')}{(ship.demandedSpeed - ship.speed).toFixed(1)})</span>
+                        )}
+                      </span>
+                    )}
+                  </p>
+                  <p>
+                    Heading: {ship.heading.toFixed(1)}°
+                    {ship.demandedCourse !== undefined && (
+                      <span style={{ color: ship.demandedCourse !== ship.heading ? '#ff4d4f' : '#52c41a' }}>
+                        {' '}→ {ship.demandedCourse.toFixed(1)}°
+                        {ship.demandedCourse !== ship.heading && (
+                          <span> ({((((ship.demandedCourse - ship.heading + 540) % 360) - 180)).toFixed(1)}°)</span>
+                        )}
+                      </span>
+                    )}
+                  </p>
                   <p>Status: {ship.status}</p>
                   {ship.collisionRisks.length > 0 && (
                     <div style={{ marginTop: '8px', borderTop: '1px solid #d9d9d9', paddingTop: '8px' }}>
@@ -256,6 +333,14 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
                               • {risk.distance.toFixed(1)}nm at {risk.bearing.toFixed(0)}°
                               <br />
                               • Closing at {(-risk.relativeSpeed).toFixed(1)} knots
+                              {risk.collisionPoint && (
+                                <>
+                                  <br />
+                                  • ⚠️ Collision in {risk.collisionPoint.timeToCollision.toFixed(1)} minutes
+                                  <br />
+                                  • At {risk.collisionPoint.latitude.toFixed(4)}°N, {risk.collisionPoint.longitude.toFixed(4)}°W
+                                </>
+                              )}
                             </div>
                           </div>
                         );
