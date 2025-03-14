@@ -51,9 +51,9 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
                 positions={ship.trail.map(pos => [pos.latitude, pos.longitude])}
                 pathOptions={{
                   color: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
-                  opacity: 0.4,
+                  opacity: 0.8,
                   weight: 2,
-                  dashArray: '5,10'
+                  dashArray: '4,10'
                 }}
               />
             )}

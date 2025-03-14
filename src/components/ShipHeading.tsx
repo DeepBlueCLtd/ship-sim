@@ -11,7 +11,14 @@ export const ShipHeading: React.FC<ShipHeadingProps> = ({ ship, isChangingCourse
   const map = useMap();
   const [points, setPoints] = React.useState<[number, number][]>([]);
 
-  // Calculate heading indicator points (a triangle pointing in ship's direction)
+  /**
+   * Calculate heading indicator points (a triangle pointing in ship's direction)
+   * 
+   * Angle Conversion:
+   * - Maritime navigation uses 0° = North, increasing clockwise (90° = East)
+   * - Mathematical angles use 0° = East, increasing counterclockwise (90° = North)
+   * - We convert from maritime to math angles using (90 - heading)
+   */
   const calculateHeadingPoints = React.useCallback(() => {
     const lat = ship.position.latitude;
     const lon = ship.position.longitude;
@@ -22,8 +29,9 @@ export const ShipHeading: React.FC<ShipHeadingProps> = ({ ship, isChangingCourse
     const baseSize = 0.005; // Base size at zoom level 10
     const size = baseSize * Math.pow(0.8, zoom - 10); // Exponential scaling
 
-    // Convert heading to radians
-    const rad = (heading - 90) * (Math.PI / 180);
+    // Convert from maritime heading (0° = North) to mathematical angle (0° = East)
+    // Example: maritime 0° (North) becomes 90° (North) in math angles
+    const rad = (90 - heading) * (Math.PI / 180);
 
     // Calculate triangle points
     const point1: [number, number] = [

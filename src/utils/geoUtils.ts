@@ -15,11 +15,19 @@ function toDegrees(radians: number): number {
 }
 
 /**
- * Calculate a point at a given distance and bearing from start point
+ * Calculate a point at a given distance and bearing from start point using maritime navigation angles.
+ * 
+ * Maritime Navigation Angle Convention:
+ * - 0° points North (up)
+ * - 90° points East (right)
+ * - 180° points South (down)
+ * - 270° points West (left)
+ * - Angles increase clockwise
+ * 
  * @param startLat - Starting latitude in degrees
  * @param startLon - Starting longitude in degrees
  * @param distance - Distance in nautical miles
- * @param bearing - Bearing in degrees (0-359)
+ * @param bearing - Bearing in degrees (0-359), using maritime navigation convention
  * @returns [latitude, longitude] in degrees
  */
 export function calculateDestination(
@@ -107,8 +115,17 @@ export function generateRandomPointOutsidePolygon(polygon: Feature<Polygon>): [n
 }
 
 /**
- * Calculate ship movement for a given time interval
- * @param ship - Ship to move
+ * Calculate ship movement for a given time interval using maritime navigation angles.
+ * Uses the standard maritime navigation convention where:
+ * - Ship heading of 0° means moving North
+ * - Ship heading of 90° means moving East
+ * - Ship heading of 180° means moving South
+ * - Ship heading of 270° means moving West
+ * 
+ * @param currentLat - Current latitude in degrees
+ * @param currentLon - Current longitude in degrees
+ * @param speed - Speed in knots
+ * @param heading - Ship's heading in degrees (0-359), using maritime navigation convention
  * @param minutes - Number of minutes to simulate
  * @returns New position [latitude, longitude]
  */
@@ -127,9 +144,14 @@ export function calculateShipMovement(
 }
 
 /**
- * Calculate new ship heading based on current and demanded course
- * Standard rate turn is 3 degrees per minute
- * @returns New heading in degrees
+ * Calculate new ship heading based on current and demanded course.
+ * Uses maritime navigation angle convention (0° = North, clockwise).
+ * Standard rate turn is 3 degrees per minute.
+ * 
+ * @param currentHeading - Current heading in degrees (0-359)
+ * @param demandedCourse - Demanded course in degrees (0-359)
+ * @param minutes - Time interval in minutes
+ * @returns New heading in degrees using maritime navigation convention
  */
 export function calculateNewHeading(currentHeading: number, demandedCourse: number | undefined, minutes: number): number {
   if (!demandedCourse) return currentHeading;

@@ -13,8 +13,16 @@ function App() {
   const [ships, setShips] = useState<ShipDictionary>({});
   const [simulationTime, setSimulationTime] = useState<SimulationTime>({
     timestamp: new Date(),
-    running: false
+    running: false,
+    trailLength: 30 // Default to 30 positions
   });
+
+  const handleTrailLengthChange = useCallback((newLength: number) => {
+    setSimulationTime(prev => ({
+      ...prev,
+      trailLength: newLength
+    }));
+  }, []);
 
   // Update simulation time and ship positions every 2 seconds when running
   useEffect(() => {
@@ -47,14 +55,14 @@ function App() {
             1
           );
           
-          // Add current position to trail (limit to 30 points)
+          // Add current position to trail (limit to specified length)
           ship.trail = [
             {
               latitude: ship.position.latitude,
               longitude: ship.position.longitude,
               timestamp: new Date(simulationTime.timestamp)
             },
-            ...ship.trail.slice(0, 29)
+            ...ship.trail.slice(0, simulationTime.trailLength - 1)
           ];
 
           // Update to new position
@@ -77,7 +85,7 @@ function App() {
     }, 2000); // Update every 2 seconds
 
     return () => clearInterval(interval);
-  }, [simulationTime.running, simulationTime.timestamp]);
+  }, [simulationTime.running, simulationTime.timestamp, simulationTime.trailLength]);
 
   const toggleSimulation = useCallback(() => {
     setSimulationTime(prev => ({
@@ -102,6 +110,7 @@ function App() {
           onInitialize={handleInitialize}
           simulationTime={simulationTime}
           onToggleSimulation={toggleSimulation}
+          onTrailLengthChange={handleTrailLengthChange}
         />
       </Layout.Sider>
       <Content>
