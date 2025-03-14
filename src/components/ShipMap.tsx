@@ -182,10 +182,11 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
             {/* 2. Ship trail */}
             <Polyline
               positions={[
-                [ship.position.latitude, ship.position.longitude] as [number, number],
                 ...(ship.trail.length > 0 ? ship.trail
-                  .slice(0, displayedTrailLength)
-                  .map(pos => [pos.latitude, pos.longitude] as [number, number]) : [])
+                  .slice(-displayedTrailLength) // Take the last N points
+                  .reverse() // Reverse to get chronological order (oldest to newest)
+                  .map(pos => [pos.latitude, pos.longitude] as [number, number]) : []),
+                [ship.position.latitude, ship.position.longitude] as [number, number] // Current position last
               ] as [number, number][]}
               pathOptions={{
                 color: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
