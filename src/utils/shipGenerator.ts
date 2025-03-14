@@ -79,7 +79,8 @@ export function generateRandomShips(count: number): Ship[] {
       collisionRisks: [],
       turnRate: 2, // Initial turn rate of 2 degrees per minute
       avoidingLand: false, // Initialize not avoiding land
-      color: shipColors[index % shipColors.length] // Assign a unique color from the predefined set
+      color: shipColors[index % shipColors.length], // Assign a unique color from the predefined set
+      collisionAvoidanceActive: true // Enable collision avoidance by default
     };
   });
 }

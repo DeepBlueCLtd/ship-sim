@@ -65,6 +65,8 @@ export interface Ship {
   collisionRisks: CollisionRisk[];
   /** Whether the ship is currently avoiding land */
   avoidingLand: boolean;
+  /** Whether collision avoidance is active for this ship */
+  collisionAvoidanceActive: boolean;
 }
 
 /**

@@ -33,6 +33,28 @@ function App() {
     }));
   }, []);
 
+  const handleToggleCollisionAvoidance = useCallback((shipId: string) => {
+    setShips(prevShips => {
+      return prevShips.map(ship => {
+        if (ship.id === shipId) {
+          // Toggle collision avoidance and clear any existing collision avoidance state
+          const collisionAvoidanceActive = !ship.collisionAvoidanceActive;
+          return {
+            ...ship,
+            collisionAvoidanceActive,
+            // Clear collision avoidance state when turning it off
+            collisionRisks: collisionAvoidanceActive ? ship.collisionRisks : [],
+            demandedCourse: collisionAvoidanceActive ? ship.demandedCourse : undefined,
+            demandedSpeed: collisionAvoidanceActive ? ship.demandedSpeed : undefined,
+            normalSpeed: collisionAvoidanceActive ? ship.normalSpeed : undefined,
+            avoidingLand: collisionAvoidanceActive ? ship.avoidingLand : false
+          };
+        }
+        return ship;
+      });
+    });
+  }, []);
+
   // Update simulation time and ship positions every 2 seconds when running
   useEffect(() => {
     if (!simulationTime.running) return;
@@ -75,8 +97,8 @@ function App() {
 
         // First, check for potential collisions and update demanded courses
         updatedShips.forEach(ship => {
-          // Skip collision checks for disabled or aground ships
-          if (ship.status === 'disabled' || ship.status === 'aground') {
+          // Skip collision checks for disabled, aground ships, or ships with collision avoidance disabled
+          if (ship.status === 'disabled' || ship.status === 'aground' || !ship.collisionAvoidanceActive) {
             ship.collisionRisks = [];
             ship.demandedCourse = undefined;
             ship.demandedSpeed = undefined;
@@ -316,6 +338,7 @@ function App() {
               ships={ships}
               isDarkMode={isDarkMode}
               onThemeChange={setIsDarkMode}
+              onToggleCollisionAvoidance={handleToggleCollisionAvoidance}
             />
             <div style={{ flex: 1 }}>
               <ShipMap

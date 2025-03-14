@@ -1,7 +1,6 @@
 import { Button, Layout, Typography, Space, Slider, Switch } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, BulbOutlined } from '@ant-design/icons';
 import { SimulationTime, Ship } from '../types';
-import { ShipCards } from './ShipCards';
 
 const { Sider } = Layout;
 
@@ -16,6 +15,7 @@ interface ControlPanelProps {
   isDarkMode: boolean;
   onThemeChange: (isDark: boolean) => void;
   onToggleDarkMode: () => void;
+  onToggleCollisionAvoidance: (shipId: string) => void;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({ 
@@ -27,7 +27,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onStepIntervalChange,
   ships,
   isDarkMode,
-  onThemeChange
+  onThemeChange,
+  onToggleCollisionAvoidance
 }) => {
   // Format the time as HH:mm
   const formattedTime = simulationTime.timestamp.toLocaleTimeString('en-GB', {
@@ -158,7 +159,36 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             paddingRight: '8px', // Space for scrollbar
             marginRight: '-8px' // Compensate for padding to maintain alignment
           }}>
-            <ShipCards ships={ships} />
+            {ships.map(ship => (
+              <div key={ship.id} style={{
+                padding: '12px',
+                marginBottom: '8px',
+                borderLeft: `4px solid ${ship.color}`,
+                backgroundColor: isDarkMode ? '#141414' : '#fff',
+                borderRadius: '4px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <Typography.Text style={{ color: isDarkMode ? '#d9d9d9' : undefined }}>
+                    {ship.name}
+                  </Typography.Text>
+                  <Switch
+                    checked={ship.collisionAvoidanceActive}
+                    onChange={() => onToggleCollisionAvoidance(ship.id)}
+                    size="small"
+                    checkedChildren="CA On"
+                    unCheckedChildren="CA Off"
+                  />
+                </div>
+                <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                  Status: {ship.status}
+                </Typography.Text>
+                {ship.collisionRisks.length > 0 && (
+                  <Typography.Text type="warning" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                    Collision Risks: {ship.collisionRisks.length}
+                  </Typography.Text>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </Space>
