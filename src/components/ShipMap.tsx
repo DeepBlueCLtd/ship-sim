@@ -1,20 +1,9 @@
-import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polygon } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ShipDictionary } from '../types';
-import L from 'leaflet';
 import gbData from '../assets/gb.json';
-
-// Fix for default marker icons in React-Leaflet
-interface IconDefault extends L.Icon.Default {
-  _getIconUrl?: string;
-}
-
-delete (L.Icon.Default.prototype as IconDefault)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: '/marker-icon-2x.png',
-  iconUrl: '/marker-icon.png',
-  shadowUrl: '/marker-shadow.png',
-});
+import { ShipHeading } from './ShipHeading';
+import React from 'react';
 
 interface ShipMapProps {
   ships: ShipDictionary;
@@ -52,21 +41,39 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
           }}
         />
       )}
-      {Object.values(ships).map((ship) => (
-        <Marker
-          key={ship.id}
-          position={[ship.position.latitude, ship.position.longitude]}
-        >
-          <Popup>
-            <div>
-              <h3>{ship.name}</h3>
-              <p>Type: {ship.type}</p>
-              <p>Speed: {ship.speed} knots</p>
-              <p>Heading: {ship.heading}°</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {Object.values(ships).map((ship) => {
+        const isChangingCourseOrSpeed = ship.demandedCourse !== undefined || ship.demandedSpeed !== undefined;
+        return (
+          <React.Fragment key={ship.id}>
+            <CircleMarker
+
+              center={[ship.position.latitude, ship.position.longitude]}
+              radius={6}
+              pathOptions={{
+                color: isChangingCourseOrSpeed ? '#ff4d4f' : '#1890ff',
+                fillColor: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
+                fillOpacity: 0.8,
+                weight: 2
+              }}
+            >
+              <Popup>
+                <div>
+                  <h3>{ship.name}</h3>
+                  <p>Type: {ship.type}</p>
+                  <p>Speed: {ship.speed} knots {ship.demandedSpeed ? `(Demanded: ${ship.demandedSpeed})` : ''}</p>
+                  <p>Heading: {ship.heading}° {ship.demandedCourse ? `(Demanded: ${ship.demandedCourse}°)` : ''}</p>
+                  <p>Status: {ship.status}</p>
+                </div>
+              </Popup>
+            </CircleMarker>
+            <ShipHeading
+
+              ship={ship}
+              isChangingCourse={ship.demandedCourse !== undefined}
+            />
+          </React.Fragment>
+        );
+      })}
     </MapContainer>
   );
 };

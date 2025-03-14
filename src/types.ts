@@ -37,3 +37,13 @@ export interface Ship {
 export type ShipDictionary = {
   [id: string]: Ship;
 };
+
+/**
+ * Represents the current simulation time state
+ */
+export interface SimulationTime {
+  /** Current simulation timestamp */
+  timestamp: Date;
+  /** Whether the simulation is currently running */
+  running: boolean;
+}
