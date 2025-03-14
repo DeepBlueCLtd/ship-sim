@@ -219,13 +219,19 @@ function App() {
             1
           );
           
-          // Add current position to trail (limit to maximum length)
+          // Add current position and state to trail (limit to maximum length)
           ship.trail = [
             ...ship.trail.slice(-(MAX_TRAIL_LENGTH - 1)),
             {
               latitude: ship.position.latitude,
               longitude: ship.position.longitude,
-              timestamp: new Date(simulationTime.timestamp)
+              timestamp: new Date(simulationTime.timestamp),
+              heading: ship.heading,
+              speed: ship.speed,
+              demandedCourse: ship.demandedCourse,
+              demandedSpeed: ship.demandedSpeed,
+              status: ship.status,
+              avoidingLand: ship.avoidingLand
             }
           ];
 

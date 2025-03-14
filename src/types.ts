@@ -47,11 +47,17 @@ export interface Ship {
   type: string;
   /** Current status of the ship */
   status: 'underway' | 'anchored' | 'moored' | 'aground' | 'disabled';
-  /** Trail of previous positions (most recent first) */
+  /** Trail of previous positions and states (most recent first) */
   trail: Array<{
     latitude: number;
     longitude: number;
     timestamp: Date;
+    heading: number;
+    speed: number;
+    demandedCourse?: number;
+    demandedSpeed?: number;
+    status: 'underway' | 'anchored' | 'moored' | 'aground' | 'disabled';
+    avoidingLand: boolean;
   }>;
   /** List of ships that pose collision risks */
   collisionRisks: CollisionRisk[];
