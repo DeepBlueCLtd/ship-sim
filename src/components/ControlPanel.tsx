@@ -86,7 +86,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           
           <div style={{ display: 'flex', gap: '24px' }}>
             <div style={{ flex: 1 }}>
-              <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+              <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
                 Simulation Speed
               </Typography.Text>
               <Slider
@@ -95,18 +95,27 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 step={1}
                 value={Math.round(1000 / simulationTime.stepInterval)}
                 onChange={onStepIntervalChange}
+                styles={{
+                  track: { backgroundColor: isDarkMode ? '#177ddc' : undefined },
+                  rail: { backgroundColor: isDarkMode ? '#434343' : undefined },
+                  handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
+                }}
                 marks={{
-                  1: '1',
-                  5: '5',
-                  10: '10'
+                  1: { label: '1', style: { color: isDarkMode ? '#d9d9d9' : undefined } },
+                  5: { label: '5', style: { color: isDarkMode ? '#d9d9d9' : undefined } },
+                  10: { label: '10', style: { color: isDarkMode ? '#d9d9d9' : undefined } }
                 }}
                 tooltip={{
-                  formatter: (value) => `${value} steps/sec`
+                  formatter: (value) => `${value} steps/sec`,
+                  overlayInnerStyle: isDarkMode ? {
+                    backgroundColor: '#1f1f1f',
+                    color: '#d9d9d9'
+                  } : undefined
                 }}
               />
             </div>
             <div style={{ flex: 1 }}>
-              <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+              <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
                 Trail Length
               </Typography.Text>
               <Slider
@@ -114,31 +123,27 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 max={100}
                 value={simulationTime.displayedTrailLength}
                 onChange={onTrailLengthChange}
+                styles={{
+                  track: { backgroundColor: isDarkMode ? '#177ddc' : undefined },
+                  rail: { backgroundColor: isDarkMode ? '#434343' : undefined },
+                  handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
+                }}
                 marks={{
-                  0: 'Off',
-                  20: '20',
-                  50: '50',
-                  100: '100'
+                  0: { label: 'Off', style: { color: isDarkMode ? '#d9d9d9' : undefined } },
+                  20: { label: '20', style: { color: isDarkMode ? '#d9d9d9' : undefined } },
+                  50: { label: '50', style: { color: isDarkMode ? '#d9d9d9' : undefined } },
+                  100: { label: '100', style: { color: isDarkMode ? '#d9d9d9' : undefined } }
+                }}
+                tooltip={{
+                  formatter: (value) => `${value} positions`,
+                  overlayInnerStyle: isDarkMode ? {
+                    backgroundColor: '#1f1f1f',
+                    color: '#d9d9d9'
+                  } : undefined
                 }}
               />
             </div>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-          <Button type="primary" onClick={onAddShips}>
-            +5 Ships
-          </Button>
-          <Button type="primary" danger onClick={onClearShips}>
-            Clear
-          </Button>
-          <Button 
-            type="primary" 
-            icon={simulationTime.running ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-            onClick={onToggleSimulation}
-          >
-            {simulationTime.running ? 'Pause' : 'Start'}
-          </Button>
         </div>
 
         {/* Ship status cards */}

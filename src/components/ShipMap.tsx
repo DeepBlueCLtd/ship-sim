@@ -1,7 +1,7 @@
 import { MapContainer, TileLayer, CircleMarker, Polygon, Polyline, Circle, Tooltip, ScaleControl } from 'react-leaflet';
 import { calculateDestination } from '../utils/geoUtils';
 import 'leaflet/dist/leaflet.css';
-import { ShipDictionary } from '../types';
+import { ShipDictionary, Ship as ShipType } from '../types';
 import { displayPolygons } from '../data/landPolygons';
 import { SPAWN_POINT, MAX_DISTANCE_KM } from '../config/constants';
 import { CompassRose } from './CompassRose';
@@ -14,6 +14,8 @@ interface ShipMapProps {
   displayedTrailLength?: number;
   isDarkMode?: boolean;
 }
+
+const notAgroundOrDisabled = (state: ShipType['status']) => state !== 'aground' && state !== 'disabled';
 
 export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 30, isDarkMode = false }) => {
 
@@ -83,7 +85,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
           <React.Fragment key={ship.id}>
             {/* Draw layers in order: detection range, collision indicators, trail, cone, ship */}
             {/* 1. Collision risk indicators */}
-            {ship.collisionRisks.map(risk => {
+            {notAgroundOrDisabled(ship.status) && ship.collisionRisks.map(risk => {
               const otherShip = ships.find(s => s.id === risk.shipId);
               if (!otherShip) return null;
 
@@ -164,7 +166,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
             })}
 
             {/* 2. Collision detection range (4nm) */}
-            <Circle
+            {notAgroundOrDisabled(ship.status) && (<Circle
               center={[ship.position.latitude, ship.position.longitude]}
               radius={4 * 1852} // 4nm in meters
               pathOptions={{
@@ -174,7 +176,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                 weight: 1,
                 dashArray: '5,5'
               }}
-            />
+            />)}
             {/* 2. Ship trail */}
             <Polyline
               positions={[
@@ -191,7 +193,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
               }}
               />
             {/* 2. Collision avoidance cone - only show if not aground */}
-            {ship.status !== 'aground' && (
+            {notAgroundOrDisabled(ship.status) && (
               <Polygon
               positions={[
                 // Cone apex at ship position
@@ -249,7 +251,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                 )}
                 radius={0}
               >
-                {(ship.avoidingLand || ship.collisionRisks.length > 0) && (
+                {notAgroundOrDisabled(ship.status) && (ship.avoidingLand || ship.collisionRisks.length > 0) && (
                   <Tooltip permanent={true} direction='top'>
                     <div style={{ textAlign: 'center' }}>
                       {/* Show what we're avoiding */}
