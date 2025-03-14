@@ -296,7 +296,6 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
             {/* Ship with dimensions */}
             <Ship
               ship={ship}
-              ships={ships}
               isChangingCourseOrSpeed={isChangingCourseOrSpeed}
               isDarkMode={isDarkMode}
             />

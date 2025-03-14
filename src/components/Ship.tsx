@@ -5,7 +5,6 @@ import { calculateDestination } from '../utils/geoUtils';
 
 interface ShipProps {
   ship: ShipType;
-  ships: Record<string, ShipType>;
   isChangingCourseOrSpeed: boolean;
   isDarkMode?: boolean;
 }
