@@ -38,7 +38,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   return (
     <Sider width={500} style={{ background: 'inherit', padding: '20px' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Space direction="horizontal" style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Space direction="vertical" style={{ width: '100%', justifyContent: 'space-between', alignItems: 'start' }}>
           <Typography.Title level={4} style={{ margin: 0 }}>
             Ship Controls
           </Typography.Title>
@@ -52,19 +52,38 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '4px' }}>
-            <Typography.Title level={5} style={{ margin: 0 }}>
-              Simulation Time
-            </Typography.Title>
-            <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-              ({Math.round(1000 / simulationTime.stepInterval)} steps/sec)
-            </Typography.Text>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '4px' }}>
+                <Typography.Title level={5} style={{ margin: 0 }}>
+                  Simulation Time
+                </Typography.Title>
+                <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                  ({Math.round(1000 / simulationTime.stepInterval)} steps/sec)
+                </Typography.Text>
+              </div>
+              <Typography.Text style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>
+                {formattedTime}
+              </Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}>
+                Each step advances time by 1 minute
+              </Typography.Text>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', width: '30%' }}>
+              <Button type="primary" onClick={onAddShips}>
+                +5 Ships
+              </Button>
+              <Button type="primary" danger onClick={onClearShips}>
+                Clear
+              </Button>
+              <Button 
+                type="primary" 
+                icon={simulationTime.running ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                onClick={onToggleSimulation}
+              >
+                {simulationTime.running ? 'Pause' : 'Start'}
+              </Button></div>
           </div>
-          <Typography.Text style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>
-            {formattedTime}
-          </Typography.Text>
-          <Typography.Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}>
-            Each step advances time by 1 minute
-          </Typography.Text>
+          
           <div style={{ display: 'flex', gap: '24px' }}>
             <div style={{ flex: 1 }}>
               <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>
@@ -117,9 +136,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             type="primary" 
             icon={simulationTime.running ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
             onClick={onToggleSimulation}
-            style={{ flex: 1 }}
           >
-            {simulationTime.running ? 'Pause Simulation' : 'Start Simulation'}
+            {simulationTime.running ? 'Pause' : 'Start'}
           </Button>
         </div>
 

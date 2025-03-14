@@ -305,13 +305,6 @@ function App() {
       <Layout style={{ minHeight: '100vh' }}>
         <Content>
           <div style={{ display: 'flex', height: '100vh' }}>
-            <div style={{ flex: 1 }}>
-              <ShipMap
-                ships={ships}
-                displayedTrailLength={simulationTime.displayedTrailLength}
-                isDarkMode={isDarkMode}
-              />
-            </div>
             <ControlPanel
               simulationTime={simulationTime}
               onTrailLengthChange={handleTrailLengthChange}
@@ -324,6 +317,13 @@ function App() {
               isDarkMode={isDarkMode}
               onThemeChange={setIsDarkMode}
             />
+            <div style={{ flex: 1 }}>
+              <ShipMap
+                ships={ships}
+                displayedTrailLength={simulationTime.displayedTrailLength}
+                isDarkMode={isDarkMode}
+              />
+            </div>
           </div>
         </Content>
       </Layout>
