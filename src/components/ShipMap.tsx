@@ -1,9 +1,10 @@
-import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Polyline, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ShipDictionary } from '../types';
 import gbData from '../assets/gb.json';
 import { ShipHeading } from './ShipHeading';
 import { CompassRose } from './CompassRose';
+import { MouseCoordinates } from './MouseCoordinates';
 import React from 'react';
 
 interface ShipMapProps {
@@ -11,19 +12,31 @@ interface ShipMapProps {
 }
 
 export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
-  // Find Isle of Wight polygon
-  const iowPolygon = gbData.features.find(
-    (feature) => feature.properties.id === 'GBIOW'
-  );
+  // Get region polygons
+  const regions = {
+    iow: gbData.features.find(f => f.properties.id === 'GBIOW'),
+    dorset: gbData.features.find(f => f.properties.id === 'GBDOR'),
+    hampshire: gbData.features.find(f => f.properties.id === 'GBHAM'),
+    bournemouth: gbData.features.find(f => f.properties.id === 'GBBMH')
+  };
 
   // Convert GeoJSON coordinates to Leaflet format (swap lat/long)
-  const polygonCoords = iowPolygon
-    ? iowPolygon.geometry.coordinates[0].map(coord => [coord[1], coord[0]] as [number, number])
-    : [] as [number, number][];
+  const getPolygonCoords = (feature: typeof regions.iow) => {
+    return feature
+      ? feature.geometry.coordinates[0].map(coord => [coord[1], coord[0]] as [number, number])
+      : [] as [number, number][];
+  };
+
+  const polygons = {
+    iow: getPolygonCoords(regions.iow),
+    dorset: getPolygonCoords(regions.dorset),
+    hampshire: getPolygonCoords(regions.hampshire),
+    bournemouth: getPolygonCoords(regions.bournemouth)
+  };
 
   return (
     <MapContainer
-      center={[50.67, -1.28]} // Isle of Wight center
+      center={[50.4, -1.4]} // Centered between spawn area and coast
       zoom={11}
       style={{ height: '100vh', width: '100%' }}
     >
@@ -34,14 +47,65 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
       
       {/* Add compass rose */}
       <CompassRose />
-      {/* Display Isle of Wight polygon */}
-      {polygonCoords.length > 0 && (
+      
+      {/* Add mouse coordinates */}
+      <MouseCoordinates />
+
+      {/* Show spawn radius */}
+      <Circle
+        center={[50.3, -1.4]}
+        radius={8 * 1852} // Convert 8nm to meters (1nm = 1852m)
+        pathOptions={{
+          color: '#1890ff',
+          fillColor: '#1890ff',
+          fillOpacity: 0.05,
+          weight: 1,
+          dashArray: '5,5'
+        }}
+      />
+
+      {/* Display region polygons */}
+      {polygons.hampshire.length > 0 && (
         <Polygon
-          positions={polygonCoords}
+          positions={polygons.hampshire}
           pathOptions={{
-            color: 'blue',
-            fillColor: '#88c',
+            color: '#389e0d',
+            fillColor: '#389e0d',
+            fillOpacity: 0.1,
+            weight: 1
+          }}
+        />
+      )}
+      {polygons.bournemouth.length > 0 && (
+        <Polygon
+          positions={polygons.bournemouth}
+          pathOptions={{
+            color: '#722ed1',
+            fillColor: '#722ed1',
+            fillOpacity: 0.1,
+            weight: 1
+          }}
+        />
+      )}
+      {polygons.dorset.length > 0 && (
+        <Polygon
+          positions={polygons.dorset}
+          pathOptions={{
+            color: '#d48806',
+            fillColor: '#d48806',
+            fillOpacity: 0.1,
+            weight: 1
+          }}
+        />
+      )}
+      {polygons.iow.length > 0 && (
+        <Polygon
+          positions={polygons.iow}
+          pathOptions={{
+            color: '#1890ff',
+            fillColor: '#1890ff',
             fillOpacity: 0.2,
+            weight: 2
           }}
         />
       )}

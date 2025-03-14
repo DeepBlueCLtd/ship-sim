@@ -31,7 +31,7 @@ export const ShipHeading: React.FC<ShipHeadingProps> = ({ ship, isChangingCourse
 
     // Convert from maritime heading (0° = North) to mathematical angle (0° = East)
     // Example: maritime 0° (North) becomes 90° (North) in math angles
-    const rad = (90 - heading) * (Math.PI / 180);
+    const rad = (heading) * (Math.PI / 180);
 
     // Calculate triangle points
     const point1: [number, number] = [

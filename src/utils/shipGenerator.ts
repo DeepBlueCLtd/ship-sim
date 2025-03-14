@@ -1,7 +1,5 @@
 import { Ship } from '../types';
-import { Feature, Polygon } from 'geojson';
-import { generateRandomPointOutsidePolygon } from './geoUtils';
-import gbData from '../assets/gb.json';
+import { generateRandomPointAtDistance } from './geoUtils';
 
 const shipTypes = ['cargo', 'tanker', 'passenger', 'fishing'];
 const shipNames = ['Serenity', 'Ocean Voyager', 'Northern Star', 'Pacific Dream', 'Atlantic Spirit'];
@@ -10,19 +8,19 @@ function getRandomInRange(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
 
-// Find the Isle of Wight polygon
-const iowPolygon = gbData.features.find(
-  (feature) => feature.properties.id === 'GBIOW'
-) as Feature<Polygon>;
-
-if (!iowPolygon) {
-  throw new Error('Isle of Wight polygon not found in geographic data');
-}
+// Fixed spawn point coordinates (moved south into open water)
+const SPAWN_CENTER_LAT = 50.3;
+const SPAWN_CENTER_LON = -1.4;
+const SPAWN_RADIUS_NM = 8;
 
 export function generateRandomShips(count: number): Ship[] {
   return Array.from({ length: count }, (_, index) => {
-    // Generate a position 5nm outside the Isle of Wight
-    const [latitude, longitude] = generateRandomPointOutsidePolygon(iowPolygon);
+    // Generate a position 10nm from the spawn center
+    const [latitude, longitude] = generateRandomPointAtDistance(
+      SPAWN_CENTER_LAT,
+      SPAWN_CENTER_LON,
+      SPAWN_RADIUS_NM
+    );
     
     const heading = Math.floor(Math.random() * 360);
     const speed = getRandomInRange(5, 15);

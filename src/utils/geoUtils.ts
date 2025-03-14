@@ -176,6 +176,25 @@ export function calculateNewHeading(currentHeading: number, demandedCourse: numb
  * Standard acceleration/deceleration is 1 knot per minute
  * @returns New speed in knots
  */
+/**
+ * Generates a random point at a specified distance from a center point
+ * @param centerLat - Center latitude in degrees
+ * @param centerLon - Center longitude in degrees
+ * @param distance - Distance in nautical miles
+ * @returns [latitude, longitude]
+ */
+export function generateRandomPointAtDistance(
+  centerLat: number,
+  centerLon: number,
+  distance: number
+): [number, number] {
+  // Generate a random bearing (0-359 degrees)
+  const bearing = Math.random() * 360;
+  
+  // Calculate point at specified distance from center
+  return calculateDestination(centerLat, centerLon, distance, bearing);
+}
+
 export function calculateNewSpeed(currentSpeed: number, demandedSpeed: number | undefined, minutes: number): number {
   if (!demandedSpeed) return currentSpeed;
 
