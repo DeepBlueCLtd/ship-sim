@@ -1,5 +1,6 @@
 import { Ship } from '../types';
 import { generateRandomPointAtDistance } from './geoUtils';
+import { SPAWN_POINT, SPAWN_RADIUS_NM } from '../config/constants';
 
 const shipTypes = ['cargo', 'tanker', 'passenger', 'fishing'];
 const shipNames = ['Serenity', 'Ocean Voyager', 'Northern Star', 'Pacific Dream', 'Atlantic Spirit'];
@@ -8,17 +9,14 @@ function getRandomInRange(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
 
-// Fixed spawn point coordinates (moved south into open water)
-const SPAWN_CENTER_LAT = 50.3;
-const SPAWN_CENTER_LON = -1.4;
-const SPAWN_RADIUS_NM = 8;
+// Use spawn point from config
 
 export function generateRandomShips(count: number): Ship[] {
   return Array.from({ length: count }, (_, index) => {
     // Generate a position 10nm from the spawn center
     const [latitude, longitude] = generateRandomPointAtDistance(
-      SPAWN_CENTER_LAT,
-      SPAWN_CENTER_LON,
+      SPAWN_POINT.latitude,
+      SPAWN_POINT.longitude,
       SPAWN_RADIUS_NM
     );
     

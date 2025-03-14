@@ -1,8 +1,9 @@
-import { MapContainer, TileLayer, CircleMarker, Polygon, Polyline, Circle, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Polygon, Polyline, Circle, Tooltip, ScaleControl } from 'react-leaflet';
 import { calculateDestination } from '../utils/geoUtils';
 import 'leaflet/dist/leaflet.css';
 import { ShipDictionary } from '../types';
 import { displayPolygons } from '../data/landPolygons';
+import { SPAWN_POINT, MAX_DISTANCE_KM } from '../config/constants';
 import { CompassRose } from './CompassRose';
 import { MouseCoordinates } from './MouseCoordinates';
 import { Ship } from './Ship';
@@ -26,6 +27,9 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       
+      <ScaleControl position="bottomleft" imperial={true} metric={false} />
+      {/* Note: ScaleControl automatically shows nautical miles when both imperial and metric are false */}
+      
       {/* Add compass rose */}
       <CompassRose />
       
@@ -34,14 +38,28 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
 
       {/* Show spawn radius */}
       <Circle
-        center={[50.3, -1.4]}
+        center={[SPAWN_POINT.latitude, SPAWN_POINT.longitude]}
         radius={8 * 1852} // Convert 8nm to meters (1nm = 1852m)
         pathOptions={{
           color: '#1890ff',
           fillOpacity: 0,
-          weight: 3
+          weight: 2,
+          dashArray: '5, 10'
         }}
-      />
+      >
+      </Circle>
+
+      {/* Show return limit */}
+      <Circle
+        center={[SPAWN_POINT.latitude, SPAWN_POINT.longitude]}
+        radius={MAX_DISTANCE_KM * 1000} // Convert km to meters
+        pathOptions={{
+          color: '#ff4d4f',
+          fillOpacity: 0,
+          weight: 2
+        }}
+      >
+      </Circle>
 
       {/* Display land polygons */}
       {displayPolygons.map((polygon, index) => (

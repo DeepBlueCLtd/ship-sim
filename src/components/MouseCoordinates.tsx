@@ -21,7 +21,7 @@ export const MouseCoordinates: React.FC = () => {
   const containerStyle: React.CSSProperties = {
     position: 'absolute',
     left: 10,
-    bottom: 10,
+    bottom: 30,
     zIndex: 1000,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     padding: '4px 8px',

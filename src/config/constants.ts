@@ -9,7 +9,7 @@ export const SPAWN_POINT = {
 } as const;
 
 /** Maximum distance (in km) ships can travel from spawn point */
-export const MAX_DISTANCE_KM = 30;
+export const MAX_DISTANCE_KM = 70;
 
 /** Maximum distance in nautical miles (converted from km) */
 export const MAX_DISTANCE_NM = MAX_DISTANCE_KM / 1.852;

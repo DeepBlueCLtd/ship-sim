@@ -4,8 +4,9 @@ import { ControlPanel } from './components/ControlPanel';
 import { ShipMap } from './components/ShipMap';
 import { ShipDictionary, SimulationTime } from './types';
 import { generateRandomShips } from './utils/shipGenerator';
-import { calculateShipMovement, calculateNewHeading, calculateNewSpeed, findClearHeading, findCollisionRisks, isConeIntersectingPolygon } from './utils/geoUtils';
+import { calculateShipMovement, calculateNewHeading, calculateNewSpeed, findClearHeading, findCollisionRisks, isConeIntersectingPolygon, isPointInPolygon } from './utils/geoUtils';
 import { landPolygons } from './data/landPolygons';
+import { SPAWN_POINT, MAX_DISTANCE_NM } from './config/constants';
 import './App.css';
 
 const { Content } = Layout;
@@ -45,10 +46,7 @@ function App() {
       setShips(prevShips => {
         const updatedShips = { ...prevShips };
         
-        // Check if ships are too far from spawn point (30 km = ~16.2 nm)
-        const SPAWN_POINT = { latitude: 50.3, longitude: -1.4 };
-        const MAX_DISTANCE_KM = 30;
-        const MAX_DISTANCE_NM = MAX_DISTANCE_KM / 1.852; // Convert km to nm
+        // Check if ships are too far from spawn point
 
         Object.values(updatedShips).forEach(ship => {
           if (ship.status !== 'underway') return;
@@ -157,24 +155,10 @@ function App() {
           // Skip already disabled or aground ships
           if (ship.status === 'disabled' || ship.status === 'aground') return;
 
-          // Convert ship length to nautical miles
-          const shipLengthNm = ship.dimensions.length / 1852;
-
-          // Check distance to each land polygon
+          // Check if ship is inside any land polygon
           for (const polygon of landPolygons) {
-            // Find minimum distance to any point in the polygon
-            let minDistance = Number.MAX_VALUE;
-            for (let i = 0; i < polygon.length; i++) {
-              const point = polygon[i];
-              const distance = Math.sqrt(
-                Math.pow((ship.position.latitude - point[0]) * 60, 2) +
-                Math.pow((ship.position.longitude - point[1]) * 60 * Math.cos(ship.position.latitude * Math.PI / 180), 2)
-              );
-              minDistance = Math.min(minDistance, distance);
-            }
-
-            // If ship is closer than its length to land, it runs aground
-            if (minDistance < shipLengthNm) {
+            // Check if ship's position is inside the land polygon
+            if (isPointInPolygon([ship.position.longitude, ship.position.latitude], polygon)) {
               updatedShips[ship.id] = { ...updatedShips[ship.id], status: 'aground' };
               break;
             }
