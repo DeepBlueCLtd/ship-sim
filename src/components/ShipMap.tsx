@@ -182,7 +182,6 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
               positions={[
                 ...(ship.trail.length > 0 ? ship.trail
                   .slice(-displayedTrailLength) // Take the last N points
-                  .reverse() // Reverse to get chronological order (oldest to newest)
                   .map(pos => [pos.latitude, pos.longitude] as [number, number]) : []),
                 [ship.position.latitude, ship.position.longitude] as [number, number] // Current position last
               ] as [number, number][]}
