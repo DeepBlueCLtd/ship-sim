@@ -66,11 +66,9 @@ export interface Ship {
 }
 
 /**
- * Dictionary of ships indexed by their IDs
+ * Array of ships in the simulation
  */
-export type ShipDictionary = {
-  [id: string]: Ship;
-};
+export type ShipDictionary = Ship[];
 
 /**
  * Represents the current simulation time state

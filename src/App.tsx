@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Layout, ConfigProvider, theme } from 'antd';
 import { ControlPanel } from './components/ControlPanel';
 import { ShipMap } from './components/ShipMap';
-import { ShipDictionary, SimulationTime } from './types';
+import { Ship, SimulationTime } from './types';
 import { generateRandomShips } from './utils/shipGenerator';
 import { calculateShipMovement, calculateNewHeading, calculateNewSpeed, findClearHeading, findCollisionRisks, isConeIntersectingPolygon, isPointInPolygon } from './utils/geoUtils';
 import { landPolygons } from './data/landPolygons';
@@ -14,7 +14,7 @@ const { defaultAlgorithm, darkAlgorithm } = theme;
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [ships, setShips] = useState<ShipDictionary>({});
+  const [ships, setShips] = useState<Ship[]>([]);
   // Store up to 120 positions (2 hours at 1-minute intervals)
   const MAX_TRAIL_LENGTH = 120;
 
@@ -46,11 +46,11 @@ function App() {
 
       // Update ship positions
       setShips(prevShips => {
-        const updatedShips = { ...prevShips };
+        // Create a new array of ships to modify
+        const updatedShips = [...prevShips];
         
         // Check if ships are too far from spawn point
-
-        Object.values(updatedShips).forEach(ship => {
+        updatedShips.forEach(ship => {
           if (ship.status !== 'underway') return;
 
           // Calculate distance from spawn point in nautical miles
@@ -74,7 +74,7 @@ function App() {
         });
 
         // First, check for potential collisions and update demanded courses
-        Object.values(updatedShips).forEach(ship => {
+        updatedShips.forEach(ship => {
           // Skip collision checks for disabled or aground ships
           if (ship.status === 'disabled' || ship.status === 'aground') {
             ship.collisionRisks = [];
@@ -85,7 +85,7 @@ function App() {
             return;
           }
           // Get positions and movement data of all other ships
-          const otherShips = Object.values(updatedShips)
+          const otherShips = updatedShips
             .filter(other => other.id !== ship.id)
             .map(other => ({
               id: other.id,
@@ -164,7 +164,7 @@ function App() {
         });
 
         // Check for ships running aground
-        Object.values(updatedShips).forEach(ship => {
+        updatedShips.forEach(ship => {
           // Skip already disabled or aground ships
           if (ship.status === 'disabled' || ship.status === 'aground') return;
 
@@ -172,17 +172,17 @@ function App() {
           for (const polygon of landPolygons) {
             // Check if ship's position is inside the land polygon
             if (isPointInPolygon([ship.position.longitude, ship.position.latitude], polygon)) {
-              updatedShips[ship.id] = { ...updatedShips[ship.id], status: 'aground' };
+              ship.status = 'aground';
               break;
             }
           }
         });
 
         // Check for actual collisions between ships
-        Object.values(updatedShips).forEach(ship => {
+        updatedShips.forEach(ship => {
           if (ship.status === 'disabled' || ship.status === 'aground') return; // Skip disabled or aground ships
           
-          Object.values(updatedShips).forEach(otherShip => {
+          updatedShips.forEach(otherShip => {
             if (ship.id === otherShip.id || otherShip.status === 'disabled') return;
 
             // Calculate distance in nautical miles
@@ -199,18 +199,18 @@ function App() {
             if (distanceInNm < (shipLengthNm + otherShipLengthNm) / 2) { // Divide by 2 since we're measuring from ship centers
               if (ship.dimensions.length === otherShip.dimensions.length) {
                 // Both ships become disabled if equal length
-                updatedShips[ship.id] = { ...updatedShips[ship.id], status: 'disabled' };
-                updatedShips[otherShip.id] = { ...updatedShips[otherShip.id], status: 'disabled' };
+                ship.status = 'disabled';
+                otherShip.status = 'disabled';
               } else if (ship.dimensions.length < otherShip.dimensions.length) {
                 // Shorter ship becomes disabled
-                updatedShips[ship.id] = { ...updatedShips[ship.id], status: 'disabled' };
+                ship.status = 'disabled';
               }
             }
           });
         });
 
         // Then update all ship positions
-        Object.values(updatedShips).forEach(ship => {
+        updatedShips.forEach(ship => {
           // Skip position updates for disabled or aground ships
           if (ship.status === 'disabled' || ship.status === 'aground') return;
           // Update heading and turn rate based on demanded course
@@ -286,60 +286,45 @@ function App() {
   }, []);
 
   const handleClearShips = () => {
-    setShips({});
+    setShips([]);
   };
 
   const handleAddShips = () => {
     const newShips = generateRandomShips(5);
-    setShips(prevShips => {
-      // Get the current highest ship number to ensure unique IDs
-      const currentIds = Object.keys(prevShips)
-        .map(id => parseInt(id.split('-')[1]))
-        .filter(num => !isNaN(num));
-      const maxId = Math.max(...currentIds, 0);
-      
-      // Add new ships with incremented IDs
-      const additionalShips = newShips.map((ship, index) => ({
-        ...ship,
-        id: `ship-${maxId + index + 1}`
-      }));
-      
-      return {
-        ...prevShips,
-        ...additionalShips.reduce((acc, ship) => {
-          acc[ship.id] = ship;
-          return acc;
-        }, {} as ShipDictionary)
-      };
-    });
+    setShips(prevShips => [...prevShips, ...newShips]);
   };
+
+
 
   return (
     <ConfigProvider
       theme={{
-        algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
+        algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm
       }}
     >
-      <Layout style={{ minHeight: '100vh', background: isDarkMode ? '#141414' : '#fff' }}>
-        <Layout.Sider width={500} style={{ background: 'inherit' }}>
-          <ControlPanel
-            isDarkMode={isDarkMode}
-            onThemeChange={setIsDarkMode}
-            onAddShips={handleAddShips}
-            onClearShips={handleClearShips}
-            simulationTime={simulationTime}
-            onToggleSimulation={toggleSimulation}
-            onTrailLengthChange={handleTrailLengthChange}
-            onStepIntervalChange={handleStepIntervalChange}
-            ships={ships}
-          />
-        </Layout.Sider>
+      <Layout style={{ minHeight: '100vh' }}>
         <Content>
-          <ShipMap 
-            ships={ships} 
-            displayedTrailLength={simulationTime.displayedTrailLength}
-            isDarkMode={isDarkMode}
-          />
+          <div style={{ display: 'flex', height: '100vh' }}>
+            <div style={{ flex: 1 }}>
+              <ShipMap
+                ships={ships}
+                displayedTrailLength={simulationTime.displayedTrailLength}
+                isDarkMode={isDarkMode}
+              />
+            </div>
+            <ControlPanel
+              simulationTime={simulationTime}
+              onTrailLengthChange={handleTrailLengthChange}
+              onStepIntervalChange={handleStepIntervalChange}
+              onToggleSimulation={toggleSimulation}
+              onClearShips={handleClearShips}
+              onAddShips={handleAddShips}
+              onToggleDarkMode={() => setIsDarkMode(prev => !prev)}
+              ships={ships}
+              isDarkMode={isDarkMode}
+              onThemeChange={setIsDarkMode}
+            />
+          </div>
         </Content>
       </Layout>
     </ConfigProvider>

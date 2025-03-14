@@ -1,6 +1,6 @@
 import { Button, Layout, Typography, Space, Slider, Switch } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, BulbOutlined } from '@ant-design/icons';
-import { SimulationTime, ShipDictionary } from '../types';
+import { SimulationTime, Ship } from '../types';
 import { ShipCards } from './ShipCards';
 
 const { Sider } = Layout;
@@ -12,9 +12,10 @@ interface ControlPanelProps {
   onToggleSimulation: () => void;
   onTrailLengthChange: (length: number) => void;
   onStepIntervalChange: (stepsPerSecond: number) => void;
-  ships: ShipDictionary;
+  ships: Ship[];
   isDarkMode: boolean;
   onThemeChange: (isDark: boolean) => void;
+  onToggleDarkMode: () => void;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({ 

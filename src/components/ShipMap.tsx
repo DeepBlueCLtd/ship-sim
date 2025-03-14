@@ -78,7 +78,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
           }}
         />
       ))}
-      {Object.values(ships).map((ship) => {
+      {ships.map((ship) => {
         const isChangingCourseOrSpeed = 
           (ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading) || 
           (ship.demandedSpeed !== undefined && ship.demandedSpeed !== ship.speed) || 
@@ -88,7 +88,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
             {/* Draw layers in order: detection range, collision indicators, trail, cone, ship */}
             {/* 1. Collision risk indicators */}
             {ship.collisionRisks.map(risk => {
-              const otherShip = ships[risk.shipId];
+              const otherShip = ships.find(s => s.id === risk.shipId);
               if (!otherShip) return null;
 
               return (
