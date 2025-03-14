@@ -297,6 +297,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
               ship={ship}
               ships={ships}
               isChangingCourseOrSpeed={isChangingCourseOrSpeed}
+              isDarkMode={isDarkMode}
             />
           </React.Fragment>
         );

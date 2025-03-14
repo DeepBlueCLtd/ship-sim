@@ -7,9 +7,10 @@ interface ShipProps {
   ship: ShipType;
   ships: Record<string, ShipType>;
   isChangingCourseOrSpeed: boolean;
+  isDarkMode?: boolean;
 }
 
-export const Ship: React.FC<ShipProps> = ({ ship, isChangingCourseOrSpeed }) => {
+export const Ship: React.FC<ShipProps> = ({ ship, isChangingCourseOrSpeed, isDarkMode = false }) => {
   // Calculate corner points for ship rectangle
   const cornerPoints = [
     // Bow (front)
@@ -76,8 +77,12 @@ export const Ship: React.FC<ShipProps> = ({ ship, isChangingCourseOrSpeed }) => 
     <Polygon
       positions={cornerPoints}
       pathOptions={{
-        color: ship.status === 'disabled' ? '#000000' : (ship.status === 'aground' ? '#595959' : (ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#1890ff'))),
-        fillColor: ship.status === 'disabled' ? '#000000' : (ship.status === 'aground' ? '#595959' : (ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff'))),
+        color: ship.status === 'disabled' || ship.status === 'aground' ? 
+          (isDarkMode ? '#ffffff' : (ship.status === 'disabled' ? '#000000' : '#595959')) : 
+          (ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#1890ff')),
+        fillColor: ship.status === 'disabled' || ship.status === 'aground' ? 
+          (isDarkMode ? '#ffffff' : (ship.status === 'disabled' ? '#000000' : '#595959')) : 
+          (ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff')),
         fillOpacity: ship.status === 'disabled' || ship.status === 'aground' ? 0.9 : 0.8,
         weight: 2
       }}
