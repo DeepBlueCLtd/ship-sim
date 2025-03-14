@@ -12,9 +12,10 @@ import React from 'react';
 interface ShipMapProps {
   ships: ShipDictionary;
   displayedTrailLength?: number;
+  isDarkMode?: boolean;
 }
 
-export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 30 }) => {
+export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 30, isDarkMode = false }) => {
 
   return (
     <MapContainer
@@ -24,7 +25,10 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url={isDarkMode ? 
+          'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png' : 
+          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        }
       />
       
       <ScaleControl position="bottomleft" imperial={true} metric={false} />
@@ -67,8 +71,8 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
           key={index}
           positions={polygon}
           pathOptions={{
-            color: '#389e0d',
-            fillColor: '#389e0d',
+            color: isDarkMode ? '#52c41a' : '#389e0d',
+            fillColor: isDarkMode ? '#52c41a' : '#389e0d',
             fillOpacity: 0.3,
             weight: 1
           }}

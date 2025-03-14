@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Layout } from 'antd';
+import { Layout, ConfigProvider, theme } from 'antd';
 import { ControlPanel } from './components/ControlPanel';
 import { ShipMap } from './components/ShipMap';
 import { ShipDictionary, SimulationTime } from './types';
@@ -10,8 +10,10 @@ import { SPAWN_POINT, MAX_DISTANCE_NM } from './config/constants';
 import './App.css';
 
 const { Content } = Layout;
+const { defaultAlgorithm, darkAlgorithm } = theme;
 
 function App() {
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [ships, setShips] = useState<ShipDictionary>({});
   // Store up to 120 positions (2 hours at 1-minute intervals)
   const MAX_TRAIL_LENGTH = 120;
@@ -276,21 +278,33 @@ function App() {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Layout.Sider width={500} style={{ background: '#fff' }}>
-        <ControlPanel 
-          onInitialize={handleInitialize}
-          simulationTime={simulationTime}
-          onToggleSimulation={toggleSimulation}
-          onTrailLengthChange={handleTrailLengthChange}
-          onStepIntervalChange={handleStepIntervalChange}
-          ships={ships}
-        />
-      </Layout.Sider>
-      <Content>
-        <ShipMap ships={ships} displayedTrailLength={simulationTime.displayedTrailLength} />
-      </Content>
-    </Layout>
+    <ConfigProvider
+      theme={{
+        algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
+      }}
+    >
+      <Layout style={{ minHeight: '100vh', background: isDarkMode ? '#141414' : '#fff' }}>
+        <Layout.Sider width={500} style={{ background: 'inherit' }}>
+          <ControlPanel
+            isDarkMode={isDarkMode}
+            onThemeChange={setIsDarkMode}
+            onInitialize={handleInitialize}
+            simulationTime={simulationTime}
+            onToggleSimulation={toggleSimulation}
+            onTrailLengthChange={handleTrailLengthChange}
+            onStepIntervalChange={handleStepIntervalChange}
+            ships={ships}
+          />
+        </Layout.Sider>
+        <Content>
+          <ShipMap 
+            ships={ships} 
+            displayedTrailLength={simulationTime.displayedTrailLength}
+            isDarkMode={isDarkMode}
+          />
+        </Content>
+      </Layout>
+    </ConfigProvider>
   );
 }
 

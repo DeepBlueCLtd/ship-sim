@@ -1,5 +1,5 @@
-import { Button, Layout, Typography, Space, Slider } from 'antd';
-import { PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { Button, Layout, Typography, Space, Slider, Switch } from 'antd';
+import { PlayCircleOutlined, PauseCircleOutlined, BulbOutlined } from '@ant-design/icons';
 import { SimulationTime, ShipDictionary } from '../types';
 import { ShipCards } from './ShipCards';
 
@@ -12,6 +12,8 @@ interface ControlPanelProps {
   onTrailLengthChange: (length: number) => void;
   onStepIntervalChange: (stepsPerSecond: number) => void;
   ships: ShipDictionary;
+  isDarkMode: boolean;
+  onThemeChange: (isDark: boolean) => void;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({ 
@@ -20,7 +22,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onToggleSimulation,
   onTrailLengthChange,
   onStepIntervalChange,
-  ships
+  ships,
+  isDarkMode,
+  onThemeChange
 }) => {
   // Format the time as HH:mm
   const formattedTime = simulationTime.timestamp.toLocaleTimeString('en-GB', {
@@ -29,13 +33,19 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   });
 
   return (
-    <Sider width={500} style={{ background: '#fff', padding: '20px' }}>
+    <Sider width={500} style={{ background: 'inherit', padding: '20px' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <div>
+        <Space direction="horizontal" style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography.Title level={4} style={{ margin: 0 }}>
             Ship Controls
           </Typography.Title>
-        </div>
+          <Switch
+            checkedChildren={<BulbOutlined />}
+            unCheckedChildren={<BulbOutlined />}
+            checked={isDarkMode}
+            onChange={onThemeChange}
+          />
+        </Space>
 
         <div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '4px' }}>
