@@ -114,17 +114,17 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
         return (
           <React.Fragment key={ship.id}>
             {/* Ship trail */}
-            {ship.trail.length > 0 && (
-              <Polyline
-                positions={ship.trail.map(pos => [pos.latitude, pos.longitude])}
-                pathOptions={{
-                  color: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
-                  opacity: 0.8,
-                  weight: 2,
-                  dashArray: '4,10'
-                }}
+            <Polyline
+              positions={[
+                [ship.position.latitude, ship.position.longitude] as [number, number],
+                ...(ship.trail.length > 0 ? ship.trail.map(pos => [pos.latitude, pos.longitude] as [number, number]) : [])
+              ] as [number, number][]}
+              pathOptions={{
+                color: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
+                opacity: 0.8,
+                weight: 2
+              }}
               />
-            )}
             {/* Ship marker */}
             <CircleMarker
               center={[ship.position.latitude, ship.position.longitude]}

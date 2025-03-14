@@ -57,12 +57,12 @@ function App() {
           
           // Add current position to trail (limit to specified length)
           ship.trail = [
+            ...ship.trail.slice(-(simulationTime.trailLength - 1)),
             {
               latitude: ship.position.latitude,
               longitude: ship.position.longitude,
               timestamp: new Date(simulationTime.timestamp)
-            },
-            ...ship.trail.slice(0, simulationTime.trailLength - 1)
+            }
           ];
 
           // Update to new position

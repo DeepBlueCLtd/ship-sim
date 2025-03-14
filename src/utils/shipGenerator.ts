@@ -22,7 +22,7 @@ export function generateRandomShips(count: number): Ship[] {
       SPAWN_RADIUS_NM
     );
     
-    const heading = Math.floor(Math.random() * 360);
+    const heading = Math.floor(330 + Math.random() * 60);
     const speed = getRandomInRange(5, 15);
     
     // 30% chance of having a demanded course/speed different from current
