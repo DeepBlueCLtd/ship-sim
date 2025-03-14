@@ -159,36 +159,48 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             paddingRight: '8px', // Space for scrollbar
             marginRight: '-8px' // Compensate for padding to maintain alignment
           }}>
-            {ships.map(ship => (
-              <div key={ship.id} style={{
-                padding: '12px',
-                marginBottom: '8px',
-                borderLeft: `4px solid ${ship.color}`,
-                backgroundColor: isDarkMode ? '#141414' : '#fff',
-                borderRadius: '4px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <Typography.Text style={{ color: isDarkMode ? '#d9d9d9' : undefined }}>
-                    {ship.name}
-                  </Typography.Text>
-                  <Switch
-                    checked={ship.collisionAvoidanceActive}
-                    onChange={() => onToggleCollisionAvoidance(ship.id)}
-                    size="small"
-                    checkedChildren="CA On"
-                    unCheckedChildren="CA Off"
-                  />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+              {ships.map(ship => (
+                <div key={ship.id} style={{
+                  padding: '8px',
+                  borderLeft: `4px solid ${ship.color}`,
+                  backgroundColor: isDarkMode ? '#141414' : '#fff',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography.Text style={{ 
+                      color: isDarkMode ? '#d9d9d9' : undefined,
+                      fontSize: '12px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {ship.name}
+                    </Typography.Text>
+                    <Switch
+                      checked={ship.collisionAvoidanceActive}
+                      onChange={() => onToggleCollisionAvoidance(ship.id)}
+                      size="small"
+                      checkedChildren="CA"
+                      unCheckedChildren="CA"
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <Typography.Text type="secondary" style={{ fontSize: '11px' }}>
+                      {ship.status}
+                    </Typography.Text>
+                    {ship.collisionRisks.length > 0 && (
+                      <Typography.Text type="warning" style={{ fontSize: '11px' }}>
+                        {ship.collisionRisks.length} risks
+                      </Typography.Text>
+                    )}
+                  </div>
                 </div>
-                <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                  Status: {ship.status}
-                </Typography.Text>
-                {ship.collisionRisks.length > 0 && (
-                  <Typography.Text type="warning" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
-                    Collision Risks: {ship.collisionRisks.length}
-                  </Typography.Text>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </Space>
