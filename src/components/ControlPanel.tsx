@@ -105,7 +105,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <Space direction="vertical" style={{ width: '100%' }} size="large">
           <Button type="primary" onClick={onInitialize} style={{ width: '100%' }}>
-            Initialize Ships
+            +5 Ships
           </Button>
           <Button 
             type="primary" 

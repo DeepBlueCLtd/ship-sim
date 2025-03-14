@@ -274,13 +274,29 @@ function App() {
     }));
   }, []);
 
-  const handleInitialize = () => {
+  const handleAddShips = () => {
     const newShips = generateRandomShips(5);
-    const shipDictionary = newShips.reduce((acc, ship) => {
-      acc[ship.id] = ship;
-      return acc;
-    }, {} as ShipDictionary);
-    setShips(shipDictionary);
+    setShips(prevShips => {
+      // Get the current highest ship number to ensure unique IDs
+      const currentIds = Object.keys(prevShips)
+        .map(id => parseInt(id.split('-')[1]))
+        .filter(num => !isNaN(num));
+      const maxId = Math.max(...currentIds, 0);
+      
+      // Add new ships with incremented IDs
+      const additionalShips = newShips.map((ship, index) => ({
+        ...ship,
+        id: `ship-${maxId + index + 1}`
+      }));
+      
+      return {
+        ...prevShips,
+        ...additionalShips.reduce((acc, ship) => {
+          acc[ship.id] = ship;
+          return acc;
+        }, {} as ShipDictionary)
+      };
+    });
   };
 
   return (
@@ -294,7 +310,7 @@ function App() {
           <ControlPanel
             isDarkMode={isDarkMode}
             onThemeChange={setIsDarkMode}
-            onInitialize={handleInitialize}
+            onInitialize={handleAddShips}
             simulationTime={simulationTime}
             onToggleSimulation={toggleSimulation}
             onTrailLengthChange={handleTrailLengthChange}

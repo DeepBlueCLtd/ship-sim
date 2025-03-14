@@ -1,9 +1,25 @@
 import { Ship } from '../types';
 import { generateRandomPointAtDistance } from './geoUtils';
 import { SPAWN_POINT, SPAWN_RADIUS_NM } from '../config/constants';
+import { shipNames } from '../data/shipNames';
 
 const shipTypes = ['cargo', 'tanker', 'passenger', 'fishing'];
-const shipNames = ['Serenity', 'Ocean Voyager', 'Northern Star', 'Pacific Dream', 'Atlantic Spirit'];
+
+// Keep track of used ship names to avoid duplicates
+const usedShipNames = new Set<string>();
+
+function getUnusedShipName(): string {
+  // If all names are used, reset the used names set
+  if (usedShipNames.size >= shipNames.length) {
+    usedShipNames.clear();
+  }
+  
+  // Find an unused name
+  const availableNames = shipNames.filter(name => !usedShipNames.has(name));
+  const selectedName = availableNames[Math.floor(Math.random() * availableNames.length)];
+  usedShipNames.add(selectedName);
+  return selectedName;
+}
 
 function getRandomInRange(min: number, max: number): number {
   return Math.random() * (max - min) + min;
@@ -31,7 +47,7 @@ export function generateRandomShips(count: number): Ship[] {
     
     return {
       id: `ship-${index + 1}`,
-      name: shipNames[index % shipNames.length],
+      name: getUnusedShipName(),
       position: { latitude, longitude },
       heading,
       speed,
