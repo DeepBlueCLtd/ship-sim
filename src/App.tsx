@@ -274,6 +274,10 @@ function App() {
     }));
   }, []);
 
+  const handleClearShips = () => {
+    setShips({});
+  };
+
   const handleAddShips = () => {
     const newShips = generateRandomShips(5);
     setShips(prevShips => {
@@ -310,7 +314,8 @@ function App() {
           <ControlPanel
             isDarkMode={isDarkMode}
             onThemeChange={setIsDarkMode}
-            onInitialize={handleAddShips}
+            onAddShips={handleAddShips}
+            onClearShips={handleClearShips}
             simulationTime={simulationTime}
             onToggleSimulation={toggleSimulation}
             onTrailLengthChange={handleTrailLengthChange}

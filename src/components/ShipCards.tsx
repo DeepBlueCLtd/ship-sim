@@ -8,7 +8,7 @@ interface ShipCardsProps {
 
 export const ShipCards: React.FC<ShipCardsProps> = ({ ships }) => {
   return (
-    <Row gutter={[4, 4]} style={{ margin: '0 -2px' }}>
+    <Row gutter={[4, 4]} style={{ margin: '0 -2px', flexWrap: 'wrap' }}>
       {Object.values(ships).map((ship) => {
         const isChangingCourseOrSpeed = 
           (ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading) || 
@@ -16,7 +16,7 @@ export const ShipCards: React.FC<ShipCardsProps> = ({ ships }) => {
           ship.avoidingLand;
 
         return (
-          <Col span={8} key={ship.id}>
+          <Col xs={24} sm={12} md={8} key={ship.id} style={{ marginBottom: '4px' }}>
             <Card 
             title={<span style={{ fontSize: '12px', fontWeight: 'bold' }}>{ship.name}</span>}
             size="small"

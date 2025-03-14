@@ -6,7 +6,8 @@ import { ShipCards } from './ShipCards';
 const { Sider } = Layout;
 
 interface ControlPanelProps {
-  onInitialize: () => void;
+  onAddShips: () => void;
+  onClearShips: () => void;
   simulationTime: SimulationTime;
   onToggleSimulation: () => void;
   onTrailLengthChange: (length: number) => void;
@@ -17,7 +18,8 @@ interface ControlPanelProps {
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({ 
-  onInitialize,
+  onAddShips,
+  onClearShips,
   simulationTime,
   onToggleSimulation,
   onTrailLengthChange,
@@ -103,27 +105,38 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         </div>
 
-        <Space direction="vertical" style={{ width: '100%' }} size="large">
-          <Button type="primary" onClick={onInitialize} style={{ width: '100%' }}>
+        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+          <Button type="primary" onClick={onAddShips}>
             +5 Ships
+          </Button>
+          <Button type="primary" danger onClick={onClearShips}>
+            Clear
           </Button>
           <Button 
             type="primary" 
             icon={simulationTime.running ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
             onClick={onToggleSimulation}
-            style={{ width: '100%' }}
+            style={{ flex: 1 }}
           >
             {simulationTime.running ? 'Pause Simulation' : 'Start Simulation'}
           </Button>
-        </Space>
+        </div>
 
         {/* Ship status cards */}
-        <Space direction="vertical" style={{ width: '100%' }} size="small">
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <Typography.Title level={5} style={{ margin: '8px 0', fontSize: '14px' }}>
             Ship Status
           </Typography.Title>
-          <ShipCards ships={ships} />
-        </Space>
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            maxHeight: 'calc(100vh - 380px)', // Leave space for other controls
+            paddingRight: '8px', // Space for scrollbar
+            marginRight: '-8px' // Compensate for padding to maintain alignment
+          }}>
+            <ShipCards ships={ships} />
+          </div>
+        </div>
       </Space>
     </Sider>
   );
