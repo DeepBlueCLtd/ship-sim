@@ -1,35 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { Layout } from 'antd';
+import { ControlPanel } from './components/ControlPanel';
+import { ShipMap } from './components/ShipMap';
+import { ShipDictionary } from './types';
+import { generateRandomShips } from './utils/shipGenerator';
+import './App.css';
+
+const { Content } = Layout;
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [ships, setShips] = useState<ShipDictionary>({});
+
+  const handleInitialize = () => {
+    const newShips = generateRandomShips(5);
+    const shipDictionary = newShips.reduce((acc, ship) => {
+      acc[ship.id] = ship;
+      return acc;
+    }, {} as ShipDictionary);
+    setShips(shipDictionary);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Layout style={{ minHeight: '100vh' }}>
+      <ControlPanel onInitialize={handleInitialize} />
+      <Content>
+        <ShipMap ships={ships} />
+      </Content>
+    </Layout>
+  );
 }
 
-export default App
+export default App;
