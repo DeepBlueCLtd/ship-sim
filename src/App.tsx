@@ -114,11 +114,19 @@ function App() {
 
         // First, check for potential collisions and update demanded courses
         updatedShips.forEach(ship => {
-          // Skip collision checks for disabled, aground ships, or ships with collision avoidance disabled
-          if (ship.status === 'disabled' || ship.status === 'aground' || !ship.collisionAvoidanceActive) {
+          // Skip collision checks for disabled or aground ships
+          if (ship.status === 'disabled' || ship.status === 'aground') {
             ship.collisionRisks = [];
             ship.demandedCourse = undefined;
             ship.demandedSpeed = undefined;
+            ship.normalSpeed = undefined;
+            ship.avoidingLand = false;
+            return;
+          }
+
+          // If collision avoidance is disabled, clear collision-related states but keep return-to-spawn course
+          if (!ship.collisionAvoidanceActive) {
+            ship.collisionRisks = [];
             ship.normalSpeed = undefined;
             ship.avoidingLand = false;
             return;

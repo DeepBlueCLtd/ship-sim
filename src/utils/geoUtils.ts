@@ -1,18 +1,7 @@
 import { Feature, Polygon } from 'geojson';
+import * as turf from '@turf/turf';
 
-/**
- * Converts degrees to radians
- */
-function toRadians(degrees: number): number {
-  return degrees * (Math.PI / 180);
-}
 
-/**
- * Converts radians to degrees
- */
-function toDegrees(radians: number): number {
-  return radians * (180 / Math.PI);
-}
 
 /**
  * Calculate a point at a given distance and bearing from start point using maritime navigation angles.
@@ -36,41 +25,21 @@ export function calculateDestination(
   distance: number,
   bearing: number
 ): [number, number] {
-  const R = 3440.065; // Earth's radius in nautical miles
-  const d = distance;
-  const brng = toRadians(bearing);
-  const lat1 = toRadians(startLat);
-  const lon1 = toRadians(startLon);
-
-  const lat2 = Math.asin(
-    Math.sin(lat1) * Math.cos(d / R) +
-    Math.cos(lat1) * Math.sin(d / R) * Math.cos(brng)
-  );
-
-  const lon2 = lon1 + Math.atan2(
-    Math.sin(brng) * Math.sin(d / R) * Math.cos(lat1),
-    Math.cos(d / R) - Math.sin(lat1) * Math.sin(lat2)
-  );
-
-  return [toDegrees(lat2), toDegrees(lon2)];
+  const start = turf.point([startLon, startLat]);
+  // turf.destination expects kilometers, convert from nautical miles
+  const dest = turf.destination(start, distance * 1.852, bearing);
+  const coords = dest.geometry.coordinates;
+  return [coords[1], coords[0]];
 }
 
 /**
  * Calculate distance between two points in nautical miles
  */
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3440.065; // Earth's radius in nautical miles
-  const φ1 = toRadians(lat1);
-  const φ2 = toRadians(lat2);
-  const Δφ = toRadians(lat2 - lat1);
-  const Δλ = toRadians(lon2 - lon1);
-
-  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-          Math.cos(φ1) * Math.cos(φ2) *
-          Math.sin(Δλ/2) * Math.sin(Δλ/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-  return R * c;
+export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const from = turf.point([lon1, lat1]);
+  const to = turf.point([lon2, lat2]);
+  // turf.distance returns kilometers, convert to nautical miles
+  return turf.distance(from, to) / 1.852;
 }
 
 /**
@@ -79,20 +48,34 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
  * @returns [latitude, longitude]
  */
 export function findPolygonCenter(coordinates: number[][]): [number, number] {
-  const length = coordinates.length;
-  const sumLat = coordinates.reduce((sum, coord) => sum + coord[1], 0);
-  const sumLon = coordinates.reduce((sum, coord) => sum + coord[0], 0);
-  return [sumLat / length, sumLon / length];
+  // Ensure polygon coordinates are closed
+  const closedCoords = [...coordinates];
+  if (closedCoords[0][0] !== closedCoords[closedCoords.length - 1][0] ||
+      closedCoords[0][1] !== closedCoords[closedCoords.length - 1][1]) {
+    closedCoords.push(closedCoords[0]);
+  }
+  
+  const polygon = turf.polygon([closedCoords]);
+  const center = turf.centroid(polygon);
+  const coords = center.geometry.coordinates;
+  return [coords[1], coords[0]];
 }
 
 /**
  * Find the maximum distance from center to any point in the polygon
  */
 function findMaxDistanceFromCenter(center: [number, number], coordinates: number[][]): number {
-  const [centerLat, centerLon] = center;
-  return Math.max(...coordinates.map(coord => 
-    calculateDistance(centerLat, centerLon, coord[1], coord[0])
-  ));
+  // Ensure polygon coordinates are closed
+  const closedCoords = [...coordinates];
+  if (closedCoords[0][0] !== closedCoords[closedCoords.length - 1][0] ||
+      closedCoords[0][1] !== closedCoords[closedCoords.length - 1][1]) {
+    closedCoords.push(closedCoords[0]);
+  }
+  
+  const centerPoint = turf.point([center[1], center[0]]);
+  const polygon = turf.polygon([closedCoords]);
+  // Convert km to nautical miles
+  return turf.pointToPolygonDistance(centerPoint, polygon) / 1.852;
 }
 
 /**
@@ -136,11 +119,12 @@ export function calculateShipMovement(
   heading: number,
   minutes: number
 ): [number, number] {
-  // Convert speed from knots to nautical miles per minute
-  const distanceNM = (speed / 60) * minutes;
-  
-  // Calculate new position
-  return calculateDestination(currentLat, currentLon, distanceNM, heading);
+  const start = turf.point([currentLon, currentLat]);
+  // Convert speed from knots to kilometers per minute, then multiply by minutes
+  const distanceKm = (speed * 1.852 / 60) * minutes;
+  const end = turf.destination(start, distanceKm, heading);
+  const coords = end.geometry.coordinates;
+  return [coords[1], coords[0]];
 }
 
 /**
@@ -246,25 +230,20 @@ export function isPointInCone(
   pointLat: number,
   pointLon: number
 ): boolean {
-  // Calculate distance from apex to point
-  const distance = calculateDistance(apexLat, apexLon, pointLat, pointLon);
-  if (distance > radius) return false;
-
+  const apex = turf.point([apexLon, apexLat]);
+  const point = turf.point([pointLon, pointLat]);
+  
+  // Check if point is within radius
+  const distanceKm = turf.distance(apex, point);
+  if (distanceKm > radius * 1.852) return false;
+  
   // Calculate bearing from apex to point
-  const φ1 = toRadians(apexLat);
-  const φ2 = toRadians(pointLat);
-  const Δλ = toRadians(pointLon - apexLon);
-
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) -
-            Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  let bearing = toDegrees(Math.atan2(y, x));
-  if (bearing < 0) bearing += 360;
-
+  const bearing = (turf.bearing(apex, point) + 360) % 360;
+  
   // Calculate angular difference from heading to bearing
   let diff = Math.abs(bearing - heading);
   if (diff > 180) diff = 360 - diff;
-
+  
   return diff <= angle;
 }
 
@@ -310,63 +289,50 @@ export function calculateCollisionPoint(
   ship2Heading: number,
   ship2Speed: number
 ): CollisionPoint | undefined {
-  // Convert speeds from knots to nm/minute
-  const speed1 = ship1Speed / 60;
-  const speed2 = ship2Speed / 60;
-
-  // Calculate velocities in nm/minute
-  const v1x = speed1 * Math.sin(toRadians(ship1Heading));
-  const v1y = speed1 * Math.cos(toRadians(ship1Heading));
-  const v2x = speed2 * Math.sin(toRadians(ship2Heading));
-  const v2y = speed2 * Math.cos(toRadians(ship2Heading));
-
-  // Relative velocity
-  const vx = v2x - v1x;
-  const vy = v2y - v1y;
-
-  // Convert positions to nm using simple flat earth approximation (good enough for small distances)
-  const lat1 = ship1Lat;
-  const lon1 = ship1Lon;
-  const lat2 = ship2Lat;
-  const lon2 = ship2Lon;
-
-  const dx = (lon2 - lon1) * 60 * Math.cos(toRadians((lat1 + lat2) / 2));
-  const dy = (lat2 - lat1) * 60;
-
-  // Solve quadratic equation for time to closest point of approach (CPA)
-  const a = vx * vx + vy * vy;
-  const b = 2 * (dx * vx + dy * vy);
-  const c = dx * dx + dy * dy;
-
-  // If ships aren't moving relative to each other, no collision
-  if (Math.abs(a) < 1e-10) return undefined;
-
-  // Solve quadratic equation at^2 + bt + c = 0
-  // Discriminant b^2 - 4ac tells us if there's a real solution
-  const discriminant = b * b - 4 * a * c;
-  if (discriminant < 0) return undefined; // No real solutions
-
-  // Time to closest point of approach (CPA)
-  // Using -b/(2a) which gives us the time of minimum separation
-  const t = -b / (2 * a); // Time to CPA in minutes
-
-  // If time is negative, ships are moving apart
-  if (t < 0) return undefined;
-
-  // Calculate CPA position
-  const cpaLon = lon1 + (v1x * t) / (60 * Math.cos(toRadians(lat1)));
-  const cpaLat = lat1 + (v1y * t) / 60;
-
-  // Calculate distance at CPA
-  const cpaDistance = calculateDistance(lat1, lon1, cpaLat, cpaLon);
-
-  // If ships will pass more than 0.5nm apart, not considered a collision
-  if (cpaDistance > 0.5) return undefined;
-
+  const ship1 = turf.point([ship1Lon, ship1Lat]);
+  const ship2 = turf.point([ship2Lon, ship2Lat]);
+  
+  // Convert speeds from knots to km/minute
+  const speed1Km = (ship1Speed * 1.852) / 60;
+  const speed2Km = (ship2Speed * 1.852) / 60;
+  
+  // Calculate future positions after 1 minute
+  const ship1Future = turf.destination(ship1, speed1Km, ship1Heading);
+  const ship2Future = turf.destination(ship2, speed2Km, ship2Heading);
+  
+  // Create lines representing ship paths
+  const ship1Line = turf.lineString([ship1.geometry.coordinates, ship1Future.geometry.coordinates]);
+  const ship2Line = turf.lineString([ship2.geometry.coordinates, ship2Future.geometry.coordinates]);
+  
+  // Find intersection of paths
+  const intersection = turf.lineIntersect(ship1Line, ship2Line);
+  
+  if (intersection.features.length === 0) return undefined;
+  
+  // Get intersection point
+  const intersectPoint = intersection.features[0].geometry.coordinates;
+  
+  // Calculate time to intersection for both ships
+  const dist1 = turf.distance(ship1, turf.point(intersectPoint));
+  const dist2 = turf.distance(ship2, turf.point(intersectPoint));
+  
+  const time1 = (dist1 / speed1Km) * 60; // Convert back to minutes
+  const time2 = (dist2 / speed2Km) * 60;
+  
+  // If times are too different, ships won't collide
+  if (Math.abs(time1 - time2) > 5) return undefined;
+  
+  // Use average time as collision time
+  const timeToCollision = (time1 + time2) / 2;
+  
+  // If collision point is too far (> 0.5nm), not considered a collision
+  const distanceNM = turf.distance(ship1, turf.point(intersectPoint)) / 1.852;
+  if (distanceNM > 0.5) return undefined;
+  
   return {
-    latitude: cpaLat,
-    longitude: cpaLon,
-    timeToCollision: t
+    latitude: intersectPoint[1],
+    longitude: intersectPoint[0],
+    timeToCollision
   };
 }
 
@@ -378,16 +344,22 @@ export function findCollisionRisks(
   speed: number,
   otherShips: Array<{ id: string; latitude: number; longitude: number; heading: number; speed: number }>
 ): CollisionRisk[] {
+  const ship = turf.point([shipLon, shipLat]);
+  
   return otherShips
     .filter(other => other.id !== shipId) // Don't check collision with self
     .map(other => {
-      const bearing = calculateBearing(shipLat, shipLon, other.latitude, other.longitude);
-      const relativeBearing = Math.abs(bearing - heading);
-      const distance = calculateDistance(shipLat, shipLon, other.latitude, other.longitude);
+      const otherPoint = turf.point([other.longitude, other.latitude]);
+      const bearing = (turf.bearing(ship, otherPoint) + 360) % 360;
+      const distance = turf.distance(ship, otherPoint) / 1.852; // Convert to nautical miles
       
       // Calculate relative speed (negative means closing)
-      const relativeSpeed = speed * Math.cos(toRadians(relativeBearing)) - 
-                           other.speed * Math.cos(toRadians(Math.abs(bearing - other.heading)));
+      const bearingRad = (bearing * Math.PI) / 180;
+      const headingRad = (heading * Math.PI) / 180;
+      const otherHeadingRad = (other.heading * Math.PI) / 180;
+      
+      const relativeSpeed = speed * Math.cos(bearingRad - headingRad) - 
+                           other.speed * Math.cos(bearingRad - otherHeadingRad);
       
       // Calculate potential collision point
       const collisionPoint = calculateCollisionPoint(
@@ -425,15 +397,21 @@ export function isConeBlocked(
   coneRadius: number = 2,
   coneAngle: number = 15
 ): boolean {
+  const ship = turf.point([shipLon, shipLat]);
+  
   return otherShips.some(other => {
-    // First check if the other ship is roughly ahead of us
-    const bearing = calculateBearing(shipLat, shipLon, other.latitude, other.longitude);
+    const otherPoint = turf.point([other.longitude, other.latitude]);
+    const bearing = (turf.bearing(ship, otherPoint) + 360) % 360;
     const relativeBearing = Math.abs(bearing - heading);
     if (relativeBearing > 90) return false; // Ship is behind us
 
     // Calculate relative speed (negative means closing)
-    const relativeSpeed = speed * Math.cos(toRadians(relativeBearing)) - 
-                         other.speed * Math.cos(toRadians(Math.abs(bearing - other.heading)));
+    const bearingRad = (bearing * Math.PI) / 180;
+    const headingRad = (heading * Math.PI) / 180;
+    const otherHeadingRad = (other.heading * Math.PI) / 180;
+    
+    const relativeSpeed = speed * Math.cos(bearingRad - headingRad) - 
+                         other.speed * Math.cos(bearingRad - otherHeadingRad);
     if (relativeSpeed >= 0) return false; // Ships are moving apart
 
     // Only then check if it's in our cone
@@ -456,19 +434,17 @@ export function isConeBlocked(
  * @returns boolean indicating if point is inside polygon
  */
 export function isPointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
-  const [x, y] = point;
-  let inside = false;
+  const turfPoint = turf.point([point[0], point[1]]);
   
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    
-    const intersect = ((yi > y) !== (yj > y)) &&
-      (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
+  // Ensure polygon coordinates are closed
+  const closedPolygon = [...polygon];
+  if (closedPolygon[0][0] !== closedPolygon[closedPolygon.length - 1][0] ||
+      closedPolygon[0][1] !== closedPolygon[closedPolygon.length - 1][1]) {
+    closedPolygon.push(closedPolygon[0]);
   }
   
-  return inside;
+  const turfPolygon = turf.polygon([closedPolygon]);
+  return turf.booleanPointInPolygon(turfPoint, turfPolygon);
 }
 
 /**
@@ -489,36 +465,49 @@ export function isConeIntersectingPolygon(
   angle: number,
   polygon: [number, number][]
 ): boolean {
+  // Ensure polygon coordinates are closed (first and last points are the same)
+  const closedPolygon = [...polygon];
+  if (closedPolygon[0][0] !== closedPolygon[closedPolygon.length - 1][0] ||
+      closedPolygon[0][1] !== closedPolygon[closedPolygon.length - 1][1]) {
+    closedPolygon.push(closedPolygon[0]);
+  }
+  
+  // Create the polygon feature
+  const turfPolygon = turf.polygon([closedPolygon]);
+  
+  // Create a point for the apex
+  const apex = turf.point([apexLon, apexLat]);
+  
   // Check if apex is inside polygon
-  if (isPointInPolygon([apexLon, apexLat], polygon)) return true;
-
-  // Generate points along cone edges
-  const numPoints = 10;
-  const leftEdgePoints: [number, number][] = [];
-  const rightEdgePoints: [number, number][] = [];
+  if (turf.booleanPointInPolygon(apex, turfPolygon)) return true;
+  
+  // Create the cone as a sector
+  const leftHeading = (heading - angle + 360) % 360;
+  const rightHeading = (heading + angle + 360) % 360;
+  
+  // Convert radius to kilometers for turf
+  const radiusKm = radius * 1.852;
+  
+  // Create an arc between the edges with more points for better accuracy
+  const numPoints = 20;
+  const arcPoints: [number, number][] = [];
   
   for (let i = 0; i <= numPoints; i++) {
-    const dist = (radius * i) / numPoints;
-    const [leftLat, leftLon] = calculateDestination(apexLat, apexLon, dist, (heading - angle + 360) % 360);
-    const [rightLat, rightLon] = calculateDestination(apexLat, apexLon, dist, (heading + angle + 360) % 360);
-    leftEdgePoints.push([leftLon, leftLat]);
-    rightEdgePoints.push([rightLon, rightLat]);
+    const bearing = leftHeading + (rightHeading - leftHeading) * (i / numPoints);
+    const point = turf.destination(apex, radiusKm, bearing);
+    arcPoints.push([point.geometry.coordinates[0], point.geometry.coordinates[1]]);
   }
-
-  // Combine points to form cone polygon
-  const conePolygon = [...leftEdgePoints, ...rightEdgePoints.reverse()];
-
-  // Check if any polygon point is inside cone
-  for (const point of polygon) {
-    if (isPointInPolygon(point, conePolygon)) return true;
-  }
-
-  // Check if any cone point is inside polygon
-  for (const point of conePolygon) {
-    if (isPointInPolygon(point, polygon)) return true;
-  }
-
-  return false;
+  
+  // Create the cone polygon (already closed since we start and end at apex)
+  const coneCoords = [
+    [apexLon, apexLat],
+    ...arcPoints,
+    [apexLon, apexLat]
+  ];
+  const cone = turf.polygon([coneCoords]);
+  
+  // Check if polygons intersect
+  return turf.booleanIntersects(cone, turfPolygon);
 }
 
 /**
@@ -539,29 +528,49 @@ export function findClearHeading(
   otherShips: Array<{ latitude: number; longitude: number; heading: number; speed: number }>,
   landPolygons: Array<[number, number][]>
 ): number | undefined {
-  // Calculate bearing to each ship
-  const bearings = otherShips.map(other => ({
-    bearing: calculateBearing(shipLat, shipLon, other.latitude, other.longitude),
-    distance: calculateDistance(shipLat, shipLon, other.latitude, other.longitude)
-  }));
+  const ship = turf.point([shipLon, shipLat]);
+  
+  // Check if any ships are within 4nm
+  const nearbyShips = otherShips.filter(other => {
+    const otherPoint = turf.point([other.longitude, other.latitude]);
+    const distance = turf.distance(ship, otherPoint) / 1.852; // Convert to nautical miles
+    return distance < 4;
+  });
+
+  // Helper function to check if a heading is blocked
+  const isHeadingBlocked = (heading: number): boolean => {
+    // Check for ships
+    if (isConeBlocked(shipLat, shipLon, heading, speed, otherShips)) {
+      return true;
+    }
+    
+    // Check for land
+    return landPolygons.some(polygon =>
+      isConeIntersectingPolygon(
+        shipLat,
+        shipLon,
+        heading,
+        2, // 2nm cone
+        15, // 15 degrees
+        polygon
+      )
+    );
+  };
 
   // If no ships are within 4nm and we're not heading towards land, no need to change course
-  if (!bearings.some(b => b.distance < 4) && 
-      !landPolygons.some(polygon => isConeIntersectingPolygon(shipLat, shipLon, currentHeading, 2, 15, polygon))) {
+  if (nearbyShips.length === 0 && !isHeadingBlocked(currentHeading)) {
     return undefined;
   }
 
   // Check current heading first
-  if (!isConeBlocked(shipLat, shipLon, currentHeading, speed, otherShips) &&
-      !landPolygons.some(polygon => isConeIntersectingPolygon(shipLat, shipLon, currentHeading, 2, 15, polygon))) {
+  if (!isHeadingBlocked(currentHeading)) {
     return currentHeading;
   }
 
   // Try increasingly larger turns to starboard (10 degree increments)
   for (let turn = 10; turn <= 180; turn += 10) {
     const newHeading = (currentHeading + turn) % 360;
-    if (!isConeBlocked(shipLat, shipLon, newHeading, speed, otherShips) &&
-        !landPolygons.some(polygon => isConeIntersectingPolygon(shipLat, shipLon, newHeading, 2, 15, polygon))) {
+    if (!isHeadingBlocked(newHeading)) {
       return newHeading;
     }
   }
@@ -569,8 +578,7 @@ export function findClearHeading(
   // If no clear heading found to starboard, try port side
   for (let turn = 10; turn <= 180; turn += 10) {
     const newHeading = (currentHeading - turn + 360) % 360;
-    if (!isConeBlocked(shipLat, shipLon, newHeading, speed, otherShips) &&
-        !landPolygons.some(polygon => isConeIntersectingPolygon(shipLat, shipLon, newHeading, 2, 15, polygon))) {
+    if (!isHeadingBlocked(newHeading)) {
       return newHeading;
     }
   }
@@ -588,16 +596,10 @@ export function calculateBearing(
   lat2: number,
   lon2: number
 ): number {
-  const φ1 = toRadians(lat1);
-  const φ2 = toRadians(lat2);
-  const Δλ = toRadians(lon2 - lon1);
-
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) -
-            Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  let bearing = toDegrees(Math.atan2(y, x));
+  const point1 = turf.point([lon1, lat1]);
+  const point2 = turf.point([lon2, lat2]);
+  let bearing = turf.bearing(point1, point2);
   if (bearing < 0) bearing += 360;
-
   return bearing;
 }
 

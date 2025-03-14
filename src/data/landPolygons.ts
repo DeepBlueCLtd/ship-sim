@@ -7,7 +7,7 @@ const regions = {
   hampshire: gbData.features.find(f => f.properties.id === 'GBHAM'),
   bournemouth: gbData.features.find(f => f.properties.id === 'GBBMH'),
   westSussex: gbData.features.find(f => f.properties.id === 'GBWSX'),
-  portsmouth: gbData.features.find(f => f.properties.id === 'GBPOR'),
+  // portsmouth: gbData.features.find(f => f.properties.id === 'GBPOR'),
   southampton: gbData.features.find(f => f.properties.id === 'GBSTH'),
   poole: gbData.features.find(f => f.properties.id === 'GBPOL')
 };
