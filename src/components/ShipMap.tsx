@@ -193,8 +193,9 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                 weight: 2
               }}
               />
-            {/* 2. Collision avoidance cone */}
-            <Polygon
+            {/* 2. Collision avoidance cone - only show if not aground */}
+            {ship.status !== 'aground' && (
+              <Polygon
               positions={[
                 // Cone apex at ship position
                 [ship.position.latitude, ship.position.longitude],
@@ -289,6 +290,7 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                 )}
               </CircleMarker>
             </Polygon>
+            )}
 
             {/* Ship with dimensions */}
             <Ship
