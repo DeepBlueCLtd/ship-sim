@@ -85,8 +85,10 @@ function App() {
 
         // Then update all ship positions
         Object.values(updatedShips).forEach(ship => {
-          // Update heading based on demanded course
-          ship.heading = calculateNewHeading(ship.heading, ship.demandedCourse, 1);
+          // Update heading and turn rate based on demanded course
+          const [newHeading, newTurnRate] = calculateNewHeading(ship.heading, ship.turnRate, ship.demandedCourse, 1);
+          ship.heading = newHeading;
+          ship.turnRate = newTurnRate;
           
           // Update speed based on demanded speed
           ship.speed = calculateNewSpeed(ship.speed, ship.demandedSpeed, 1);
@@ -117,10 +119,13 @@ function App() {
           };
 
           // Clear demanded course/speed if reached
-          if (ship.demandedCourse !== undefined && ship.heading === ship.demandedCourse) {
+          if (ship.demandedCourse !== undefined && Math.abs(ship.heading - ship.demandedCourse) < 0.1 && Math.abs(ship.turnRate) < 0.1) {
+            ship.heading = ship.demandedCourse; // Snap to exact course
+            ship.turnRate = 0;
             ship.demandedCourse = undefined;
           }
-          if (ship.demandedSpeed !== undefined && ship.speed === ship.demandedSpeed) {
+          if (ship.demandedSpeed !== undefined && Math.abs(ship.speed - ship.demandedSpeed) < 0.1) {
+            ship.speed = ship.demandedSpeed; // Snap to exact speed
             ship.demandedSpeed = undefined;
           }
         });

@@ -29,6 +29,8 @@ export interface Ship {
   heading: number;
   /** Demanded course in degrees (0-359) */
   demandedCourse?: number;
+  /** Current turn rate in degrees per minute */
+  turnRate: number;
   /** Current speed in knots */
   speed: number;
   /** Demanded speed in knots */

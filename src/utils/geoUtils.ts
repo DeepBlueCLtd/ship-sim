@@ -144,31 +144,62 @@ export function calculateShipMovement(
 }
 
 /**
- * Calculate new ship heading based on current and demanded course.
+ * Calculate new ship heading and turn rate based on current state and demanded course.
  * Uses maritime navigation angle convention (0° = North, clockwise).
- * Standard rate turn is 3 degrees per minute.
+ * Maximum turn rate is 3 degrees per minute with acceleration/deceleration.
  * 
  * @param currentHeading - Current heading in degrees (0-359)
+ * @param currentTurnRate - Current turn rate in degrees per minute
  * @param demandedCourse - Demanded course in degrees (0-359)
  * @param minutes - Time interval in minutes
- * @returns New heading in degrees using maritime navigation convention
+ * @returns [newHeading, newTurnRate] in degrees and degrees per minute
  */
-export function calculateNewHeading(currentHeading: number, demandedCourse: number | undefined, minutes: number): number {
-  if (!demandedCourse) return currentHeading;
+export function calculateNewHeading(
+  currentHeading: number,
+  currentTurnRate: number,
+  demandedCourse: number | undefined,
+  minutes: number
+): [number, number] { // Returns [newHeading, newTurnRate]
+  if (!demandedCourse) {
+    // If no demanded course, gradually reduce turn rate
+    if (currentTurnRate === 0) return [currentHeading, 0];
+    
+    const turnDeceleration = 1.0; // degrees per second^2
+    const newTurnRate = Math.abs(currentTurnRate) <= turnDeceleration * minutes * 60 
+      ? 0 
+      : currentTurnRate - Math.sign(currentTurnRate) * turnDeceleration * minutes * 60;
+    
+    return [(currentHeading + newTurnRate * minutes + 360) % 360, newTurnRate];
+  }
 
-  const turnRate = 3; // degrees per minute
-  const maxTurn = turnRate * minutes;
-  
   // Calculate shortest turn direction
   let diff = demandedCourse - currentHeading;
   if (diff > 180) diff -= 360;
   if (diff < -180) diff += 360;
   
-  // Apply turn, limited by maximum turn rate
-  if (Math.abs(diff) <= maxTurn) {
-    return demandedCourse;
+  // Maximum turn rate is 3 degrees per minute
+  const maxTurnRate = 3.0;
+  const turnAcceleration = 0.5; // degrees per second^2
+
+  // Calculate target turn rate
+  const targetTurnRate = Math.sign(diff) * Math.min(maxTurnRate, Math.abs(diff) / minutes);
+  
+  // Accelerate or decelerate turn rate
+  const turnRateDiff = targetTurnRate - currentTurnRate;
+  const maxRateChange = turnAcceleration * minutes * 60; // Convert to per minute
+  const turnRateChange = Math.sign(turnRateDiff) * Math.min(Math.abs(turnRateDiff), maxRateChange);
+  const newTurnRate = currentTurnRate + turnRateChange;
+
+  // Calculate new heading
+  const newHeading = (currentHeading + newTurnRate * minutes + 360) % 360;
+
+  // If we've reached or overshot the demanded course, return demanded course and zero turn rate
+  if ((diff > 0 && newHeading >= demandedCourse) ||
+      (diff < 0 && newHeading <= demandedCourse)) {
+    return [demandedCourse, 0];
   }
-  return currentHeading + Math.sign(diff) * maxTurn;
+
+  return [newHeading, newTurnRate];
 }
 
 /**

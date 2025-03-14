@@ -46,7 +46,8 @@ export function generateRandomShips(count: number): Ship[] {
       type: shipTypes[Math.floor(Math.random() * shipTypes.length)],
       status: 'underway',
       trail: [],
-      collisionRisks: [], // Initialize with empty trail
+      collisionRisks: [],
+      turnRate: 0, // Initialize with no turn
     };
   });
 }

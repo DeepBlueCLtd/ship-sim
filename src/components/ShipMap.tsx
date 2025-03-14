@@ -268,16 +268,32 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
                 weight: 1
               }}
             >
-              <Tooltip permanent={true} direction='center' offset={[0, -20]}>
-                <div style={{ textAlign: 'center' }}>
-                  {ship.heading.toFixed(0)}°
-                  {ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading && (
-                    <div style={{ fontSize: '0.9em', color: '#ff7875' }}>
-                      → {ship.demandedCourse.toFixed(0)}° ({((((ship.demandedCourse - ship.heading + 540) % 360) - 180)).toFixed(0)}°)
-                    </div>
-                  )}
-                </div>
-              </Tooltip>
+              {/* Heading indicator at cone tip */}
+              <CircleMarker
+                center={calculateDestination(
+                  ship.position.latitude,
+                  ship.position.longitude,
+                  2, // 2nm radius
+                  ship.heading
+                )}
+                radius={0}
+              >
+                <Tooltip permanent={true} direction='top'>
+                  <div style={{ textAlign: 'center' }}>
+                    {ship.heading.toFixed(0)}°
+                    {ship.turnRate !== 0 && (
+                      <div style={{ fontSize: '0.9em', color: ship.turnRate > 0 ? '#ff7875' : '#91d5ff' }}>
+                        {ship.turnRate > 0 ? '↻' : '↺'} {Math.abs(ship.turnRate).toFixed(1)}°/min
+                      </div>
+                    )}
+                    {ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading && (
+                      <div style={{ fontSize: '0.9em', color: '#ff7875' }}>
+                        → {ship.demandedCourse.toFixed(0)}° ({((((ship.demandedCourse - ship.heading + 540) % 360) - 180)).toFixed(0)}°)
+                      </div>
+                    )}
+                  </div>
+                </Tooltip>
+              </CircleMarker>
             </Polygon>
 
             {/* Ship marker */}
@@ -308,9 +324,14 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
                   </p>
                   <p>
                     Heading: {ship.heading.toFixed(1)}°
+                    {ship.turnRate !== 0 && (
+                      <span style={{ color: '#ff4d4f', marginLeft: '8px' }}>
+                        ({ship.turnRate > 0 ? '↻' : '↺'} {Math.abs(ship.turnRate).toFixed(1)}°/min)
+                      </span>
+                    )}
                     {ship.demandedCourse !== undefined && (
-                      <span style={{ color: ship.demandedCourse !== ship.heading ? '#ff4d4f' : '#52c41a' }}>
-                        {' '}→ {ship.demandedCourse.toFixed(1)}°
+                      <span style={{ color: ship.demandedCourse !== ship.heading ? '#ff4d4f' : '#52c41a', display: 'block', marginLeft: '12px' }}>
+                        → {ship.demandedCourse.toFixed(1)}°
                         {ship.demandedCourse !== ship.heading && (
                           <span> ({((((ship.demandedCourse - ship.heading + 540) % 360) - 180)).toFixed(1)}°)</span>
                         )}
