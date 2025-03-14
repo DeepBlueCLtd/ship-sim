@@ -28,7 +28,8 @@ export function generateRandomShips(count: number): Ship[] {
     // 30% chance of having a demanded course/speed different from current
     const hasDemanded = Math.random() < 0.3;
     const demandedCourse = hasDemanded ? (heading + getRandomInRange(-45, 45)) % 360 : undefined;
-    const demandedSpeed = hasDemanded ? Math.max(0, speed + getRandomInRange(-5, 5)) : undefined;
+    // Set demanded speed to be higher than current speed to better test collision avoidance
+    const demandedSpeed = hasDemanded ? speed + getRandomInRange(2, 5) : undefined;
     
     return {
       id: `ship-${index + 1}`,
