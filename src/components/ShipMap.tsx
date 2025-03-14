@@ -3,6 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import { ShipDictionary } from '../types';
 import gbData from '../assets/gb.json';
 import { ShipHeading } from './ShipHeading';
+import { CompassRose } from './CompassRose';
 import React from 'react';
 
 interface ShipMapProps {
@@ -30,6 +31,9 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      
+      {/* Add compass rose */}
+      <CompassRose />
       {/* Display Isle of Wight polygon */}
       {polygonCoords.length > 0 && (
         <Polygon
