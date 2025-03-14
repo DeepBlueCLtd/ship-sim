@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button, Layout, Typography, Space, Slider, Switch } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, BulbOutlined } from '@ant-design/icons';
 import { SimulationTime, Ship } from '../types';
@@ -16,6 +17,7 @@ interface ControlPanelProps {
   onThemeChange: (isDark: boolean) => void;
   onToggleDarkMode: () => void;
   onToggleCollisionAvoidance: (shipId: string) => void;
+  onUpdateShip?: (shipId: string, updates: Partial<Ship>) => void;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({ 
@@ -28,8 +30,11 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   ships,
   isDarkMode,
   onThemeChange,
-  onToggleCollisionAvoidance
+  onToggleCollisionAvoidance,
+  onUpdateShip
 }) => {
+  const [selectedShipId, setSelectedShipId] = useState<string | null>(null);
+  const selectedShip = selectedShipId ? ships.find(s => s.id === selectedShipId) : null;
   // Format the time as HH:mm
   const formattedTime = simulationTime.timestamp.toLocaleTimeString('en-GB', {
     hour: '2-digit',
@@ -161,33 +166,36 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
               {ships.map(ship => (
-                <div key={ship.id} style={{
-                  padding: '8px',
-                  borderLeft: `4px solid ${ship.color}`,
-                  backgroundColor: isDarkMode ? '#141414' : '#fff',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography.Text style={{ 
-                      color: isDarkMode ? '#d9d9d9' : undefined,
-                      fontSize: '12px',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {ship.name}
-                    </Typography.Text>
-                    <Switch
-                      checked={ship.collisionAvoidanceActive}
-                      onChange={() => onToggleCollisionAvoidance(ship.id)}
-                      size="small"
-                      checkedChildren="CA"
-                      unCheckedChildren="CA"
-                    />
-                  </div>
+                <div
+                  key={ship.id}
+                  onClick={() => {
+                    const newSelectedId = ship.id === selectedShipId ? null : ship.id;
+                    setSelectedShipId(newSelectedId);
+                    if (newSelectedId) {
+                      onToggleCollisionAvoidance(ship.id); // Turn off collision avoidance when selected
+                    }
+                  }}
+                  style={{
+                    padding: '8px',
+                    borderLeft: `4px solid ${ship.color}`,
+                    backgroundColor: isDarkMode ? 
+                      (ship.id === selectedShipId ? '#1f1f1f' : '#141414') : 
+                      (ship.id === selectedShipId ? '#f0f0f0' : '#fff'),
+                    borderRadius: '4px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    cursor: 'pointer'
+                  }}>
+                  <Typography.Text style={{ 
+                    color: isDarkMode ? '#d9d9d9' : undefined,
+                    fontSize: '12px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {ship.name}
+                  </Typography.Text>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <Typography.Text type="secondary" style={{ fontSize: '11px' }}>
                       {ship.status}
@@ -203,6 +211,76 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Ship Control Panel */}
+        {selectedShip && (
+          <div style={{ marginTop: '16px' }}>
+            <Typography.Title level={5} style={{ margin: '8px 0', fontSize: '14px' }}>
+              Ship Control - {selectedShip.name}
+            </Typography.Title>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Course Control */}
+              <div>
+                <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
+                  Current Course: {Math.round(selectedShip.heading)}°
+                </Typography.Text>
+                {selectedShip.demandedCourse !== undefined && (
+                  <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
+                    Demanded Course: {Math.round(selectedShip.demandedCourse)}°
+                  </Typography.Text>
+                )}
+                <Slider
+                    min={0}
+                    max={359}
+                    value={selectedShip.demandedCourse ?? selectedShip.heading}
+                    onChange={(value) => onUpdateShip?.(selectedShip.id, { demandedCourse: value })}
+                    styles={{
+                      track: { backgroundColor: isDarkMode ? '#177ddc' : undefined },
+                      rail: { backgroundColor: isDarkMode ? '#434343' : undefined },
+                      handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
+                    }}
+                    tooltip={{
+                      formatter: (value) => `${value}°`,
+                      overlayInnerStyle: isDarkMode ? {
+                        backgroundColor: '#1f1f1f',
+                        color: '#d9d9d9'
+                      } : undefined
+                    }}
+                />
+              </div>
+              {/* Speed Control */}
+              <div>
+                <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
+                  Current Speed: {selectedShip.speed.toFixed(1)} kts
+                </Typography.Text>
+                {selectedShip.demandedSpeed !== undefined && (
+                  <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
+                    Demanded Speed: {selectedShip.demandedSpeed.toFixed(1)} kts
+                  </Typography.Text>
+                )}
+                <Slider
+                    min={0}
+                    max={30}
+                    step={0.5}
+                    value={selectedShip.demandedSpeed ?? selectedShip.speed}
+                    onChange={(value) => onUpdateShip?.(selectedShip.id, { demandedSpeed: value })}
+                    styles={{
+                      track: { backgroundColor: isDarkMode ? '#177ddc' : undefined },
+                      rail: { backgroundColor: isDarkMode ? '#434343' : undefined },
+                      handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
+                    }}
+                    tooltip={{
+                      formatter: (value) => `${value} kts`,
+                      overlayInnerStyle: isDarkMode ? {
+                        backgroundColor: '#1f1f1f',
+                        color: '#d9d9d9'
+                      } : undefined
+                    }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </Space>
     </Sider>
   );

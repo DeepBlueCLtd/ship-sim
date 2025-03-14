@@ -55,6 +55,23 @@ function App() {
     });
   }, []);
 
+  const handleUpdateShip = useCallback((shipId: string, updates: Partial<Ship>) => {
+    setShips(prevShips => {
+      return prevShips.map(ship => {
+        if (ship.id === shipId) {
+          // Only update demanded course/speed if collision avoidance is off
+          if (!ship.collisionAvoidanceActive) {
+            return {
+              ...ship,
+              ...updates
+            };
+          }
+        }
+        return ship;
+      });
+    });
+  }, []);
+
   // Update simulation time and ship positions every 2 seconds when running
   useEffect(() => {
     if (!simulationTime.running) return;
@@ -339,6 +356,7 @@ function App() {
               isDarkMode={isDarkMode}
               onThemeChange={setIsDarkMode}
               onToggleCollisionAvoidance={handleToggleCollisionAvoidance}
+              onUpdateShip={handleUpdateShip}
             />
             <div style={{ flex: 1 }}>
               <ShipMap
