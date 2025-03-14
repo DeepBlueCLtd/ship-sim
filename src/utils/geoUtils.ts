@@ -195,6 +195,287 @@ export function generateRandomPointAtDistance(
   return calculateDestination(centerLat, centerLon, distance, bearing);
 }
 
+/**
+ * Check if a point lies within a cone defined by its apex, heading, radius, and angle
+ * @param apexLat - Latitude of cone apex
+ * @param apexLon - Longitude of cone apex
+ * @param heading - Direction cone is pointing (0-359 degrees)
+ * @param radius - Radius of cone in nautical miles
+ * @param angle - Half-angle of cone in degrees
+ * @param pointLat - Latitude of point to check
+ * @param pointLon - Longitude of point to check
+ * @returns boolean indicating if point is in cone
+ */
+export function isPointInCone(
+  apexLat: number,
+  apexLon: number,
+  heading: number,
+  radius: number,
+  angle: number,
+  pointLat: number,
+  pointLon: number
+): boolean {
+  // Calculate distance from apex to point
+  const distance = calculateDistance(apexLat, apexLon, pointLat, pointLon);
+  if (distance > radius) return false;
+
+  // Calculate bearing from apex to point
+  const φ1 = toRadians(apexLat);
+  const φ2 = toRadians(pointLat);
+  const Δλ = toRadians(pointLon - apexLon);
+
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) -
+            Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  let bearing = toDegrees(Math.atan2(y, x));
+  if (bearing < 0) bearing += 360;
+
+  // Calculate angular difference from heading to bearing
+  let diff = Math.abs(bearing - heading);
+  if (diff > 180) diff = 360 - diff;
+
+  return diff <= angle;
+}
+
+/**
+ * Check if there are any ships in a cone ahead of a given ship
+ * @param shipLat - Ship's latitude
+ * @param shipLon - Ship's longitude
+ * @param heading - Ship's heading
+ * @param speed - Ship's speed in knots
+ * @param otherShips - Array of other ships with position, heading, and speed
+ * @param coneRadius - Radius of cone in nautical miles
+ * @param coneAngle - Half-angle of cone in degrees
+ * @returns boolean indicating if cone is clear
+ */
+interface CollisionPoint {
+  latitude: number;
+  longitude: number;
+  timeToCollision: number; // minutes
+}
+
+interface CollisionRisk {
+  shipId: string;
+  bearing: number;
+  distance: number;
+  relativeSpeed: number;
+  collisionPoint?: CollisionPoint;
+}
+
+/**
+ * Check for potential collision risks with other ships
+ * @returns Array of collision risks with details
+ */
+/**
+ * Calculate the predicted collision point between two ships
+ */
+export function calculateCollisionPoint(
+  ship1Lat: number,
+  ship1Lon: number,
+  ship1Heading: number,
+  ship1Speed: number,
+  ship2Lat: number,
+  ship2Lon: number,
+  ship2Heading: number,
+  ship2Speed: number
+): CollisionPoint | undefined {
+  // Convert speeds from knots to nm/minute
+  const speed1 = ship1Speed / 60;
+  const speed2 = ship2Speed / 60;
+
+  // Calculate velocities in nm/minute
+  const v1x = speed1 * Math.sin(toRadians(ship1Heading));
+  const v1y = speed1 * Math.cos(toRadians(ship1Heading));
+  const v2x = speed2 * Math.sin(toRadians(ship2Heading));
+  const v2y = speed2 * Math.cos(toRadians(ship2Heading));
+
+  // Relative velocity
+  const vx = v2x - v1x;
+  const vy = v2y - v1y;
+
+  // Convert positions to nm using simple flat earth approximation (good enough for small distances)
+  const lat1 = ship1Lat;
+  const lon1 = ship1Lon;
+  const lat2 = ship2Lat;
+  const lon2 = ship2Lon;
+
+  const dx = (lon2 - lon1) * 60 * Math.cos(toRadians((lat1 + lat2) / 2));
+  const dy = (lat2 - lat1) * 60;
+
+  // Solve quadratic equation for time to closest point of approach (CPA)
+  const a = vx * vx + vy * vy;
+  const b = 2 * (dx * vx + dy * vy);
+  const c = dx * dx + dy * dy;
+
+  // If ships aren't moving relative to each other, no collision
+  if (Math.abs(a) < 1e-10) return undefined;
+
+  const t = -b / (2 * a); // Time to CPA in minutes
+
+  // If time is negative, ships are moving apart
+  if (t < 0) return undefined;
+
+  // Calculate CPA position
+  const cpaLon = lon1 + (v1x * t) / (60 * Math.cos(toRadians(lat1)));
+  const cpaLat = lat1 + (v1y * t) / 60;
+
+  // Calculate distance at CPA
+  const cpaDistance = calculateDistance(lat1, lon1, cpaLat, cpaLon);
+
+  // If ships will pass more than 0.5nm apart, not considered a collision
+  if (cpaDistance > 0.5) return undefined;
+
+  return {
+    latitude: cpaLat,
+    longitude: cpaLon,
+    timeToCollision: t
+  };
+}
+
+export function findCollisionRisks(
+  shipId: string,
+  shipLat: number,
+  shipLon: number,
+  heading: number,
+  speed: number,
+  otherShips: Array<{ id: string; latitude: number; longitude: number; heading: number; speed: number }>
+): CollisionRisk[] {
+  return otherShips
+    .filter(other => other.id !== shipId) // Don't check collision with self
+    .map(other => {
+      const bearing = calculateBearing(shipLat, shipLon, other.latitude, other.longitude);
+      const relativeBearing = Math.abs(bearing - heading);
+      const distance = calculateDistance(shipLat, shipLon, other.latitude, other.longitude);
+      
+      // Calculate relative speed (negative means closing)
+      const relativeSpeed = speed * Math.cos(toRadians(relativeBearing)) - 
+                           other.speed * Math.cos(toRadians(Math.abs(bearing - other.heading)));
+      
+      // Calculate potential collision point
+      const collisionPoint = calculateCollisionPoint(
+        shipLat,
+        shipLon,
+        heading,
+        speed,
+        other.latitude,
+        other.longitude,
+        other.heading,
+        other.speed
+      );
+
+      return {
+        shipId: other.id,
+        bearing,
+        distance,
+        relativeSpeed,
+        collisionPoint
+      };
+    })
+    .filter(risk => 
+      risk.distance < 4 && // Within 4nm
+      Math.abs(risk.bearing - heading) <= 90 && // Roughly ahead
+      risk.relativeSpeed < 0 // Converging
+    );
+}
+
+export function isConeBlocked(
+  shipLat: number,
+  shipLon: number,
+  heading: number,
+  speed: number,
+  otherShips: Array<{ latitude: number; longitude: number; heading: number; speed: number }>,
+  coneRadius: number = 2,
+  coneAngle: number = 15
+): boolean {
+  return otherShips.some(other => {
+    // First check if the other ship is roughly ahead of us
+    const bearing = calculateBearing(shipLat, shipLon, other.latitude, other.longitude);
+    const relativeBearing = Math.abs(bearing - heading);
+    if (relativeBearing > 90) return false; // Ship is behind us
+
+    // Calculate relative speed (negative means closing)
+    const relativeSpeed = speed * Math.cos(toRadians(relativeBearing)) - 
+                         other.speed * Math.cos(toRadians(Math.abs(bearing - other.heading)));
+    if (relativeSpeed >= 0) return false; // Ships are moving apart
+
+    // Only then check if it's in our cone
+    return isPointInCone(
+      shipLat,
+      shipLon,
+      heading,
+      coneRadius,
+      coneAngle,
+      other.latitude,
+      other.longitude
+    );
+  });
+}
+
+/**
+ * Find a clear heading by checking cones at increasing angles to starboard
+ * @param shipLat - Ship's latitude
+ * @param shipLon - Ship's longitude
+ * @param currentHeading - Ship's current heading
+ * @param otherShips - Array of positions to check
+ * @returns Clear heading or undefined if no clear heading found
+ */
+export function findClearHeading(
+  shipLat: number,
+  shipLon: number,
+  currentHeading: number,
+  speed: number,
+  otherShips: Array<{ latitude: number; longitude: number; heading: number; speed: number }>
+): number | undefined {
+  // Calculate bearing to each ship
+  const bearings = otherShips.map(other => ({
+    bearing: calculateBearing(shipLat, shipLon, other.latitude, other.longitude),
+    distance: calculateDistance(shipLat, shipLon, other.latitude, other.longitude)
+  }));
+
+  // If no ships are within 4nm, no need to change course
+  if (!bearings.some(b => b.distance < 4)) {
+    return undefined;
+  }
+
+  // Check current heading first
+  if (!isConeBlocked(shipLat, shipLon, currentHeading, speed, otherShips)) {
+    return currentHeading;
+  }
+
+  // Try increasingly larger turns to starboard (10 degree increments)
+  for (let turn = 10; turn <= 180; turn += 10) {
+    const newHeading = (currentHeading + turn) % 360;
+    if (!isConeBlocked(shipLat, shipLon, newHeading, speed, otherShips)) {
+      return newHeading;
+    }
+  }
+
+  return undefined; // No clear heading found
+}
+
+/**
+ * Calculate bearing from point 1 to point 2 using maritime navigation angles
+ * @returns Bearing in degrees (0-359)
+ */
+export function calculateBearing(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const φ1 = toRadians(lat1);
+  const φ2 = toRadians(lat2);
+  const Δλ = toRadians(lon2 - lon1);
+
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) -
+            Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  let bearing = toDegrees(Math.atan2(y, x));
+  if (bearing < 0) bearing += 360;
+
+  return bearing;
+}
+
 export function calculateNewSpeed(currentSpeed: number, demandedSpeed: number | undefined, minutes: number): number {
   if (!demandedSpeed) return currentSpeed;
 

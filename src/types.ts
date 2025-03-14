@@ -1,6 +1,13 @@
 /**
  * Represents a ship in the simulation
  */
+export interface CollisionRisk {
+  shipId: string;
+  bearing: number;
+  distance: number;
+  relativeSpeed: number;
+}
+
 export interface Ship {
   /** Unique identifier for the ship */
   id: string;
@@ -35,6 +42,8 @@ export interface Ship {
     longitude: number;
     timestamp: Date;
   }>;
+  /** List of ships that pose collision risks */
+  collisionRisks: CollisionRisk[];
 }
 
 /**

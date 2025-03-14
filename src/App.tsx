@@ -4,7 +4,7 @@ import { ControlPanel } from './components/ControlPanel';
 import { ShipMap } from './components/ShipMap';
 import { ShipDictionary, SimulationTime } from './types';
 import { generateRandomShips } from './utils/shipGenerator';
-import { calculateShipMovement, calculateNewHeading, calculateNewSpeed } from './utils/geoUtils';
+import { calculateShipMovement, calculateNewHeading, calculateNewSpeed, findClearHeading, findCollisionRisks } from './utils/geoUtils';
 import './App.css';
 
 const { Content } = Layout;
@@ -39,6 +39,51 @@ function App() {
       setShips(prevShips => {
         const updatedShips = { ...prevShips };
         
+        // First, check for potential collisions and update demanded courses
+        Object.values(updatedShips).forEach(ship => {
+          // Get positions and movement data of all other ships
+          const otherShips = Object.values(updatedShips)
+            .filter(other => other.id !== ship.id)
+            .map(other => ({
+              id: other.id,
+              latitude: other.position.latitude,
+              longitude: other.position.longitude,
+              heading: other.heading,
+              speed: other.speed
+            }));
+
+          // Find collision risks
+          ship.collisionRisks = findCollisionRisks(
+            ship.id,
+            ship.position.latitude,
+            ship.position.longitude,
+            ship.heading,
+            ship.speed,
+            otherShips
+          );
+
+          // Check if current course is clear or find a new clear heading
+          const clearHeading = findClearHeading(
+            ship.position.latitude,
+            ship.position.longitude,
+            ship.heading,
+            ship.speed,
+            otherShips
+          );
+
+          // Update demanded course based on collision avoidance
+          if (clearHeading === undefined) {
+            // No collision risk, clear any collision avoidance course
+            if (ship.demandedCourse !== undefined) {
+              ship.demandedCourse = undefined;
+            }
+          } else if (clearHeading !== ship.heading) {
+            // Set new collision avoidance course
+            ship.demandedCourse = clearHeading;
+          }
+        });
+
+        // Then update all ship positions
         Object.values(updatedShips).forEach(ship => {
           // Update heading based on demanded course
           ship.heading = calculateNewHeading(ship.heading, ship.demandedCourse, 1);
