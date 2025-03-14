@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Layout, Typography, Space, Slider, Switch } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, BulbOutlined } from '@ant-design/icons';
 import { SimulationTime, Ship } from '../types';
+import { ShipControl } from './ShipControl';
 
 const { Sider } = Layout;
 
@@ -214,72 +215,11 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* Ship Control Panel */}
         {selectedShip && (
-          <div style={{ marginTop: '16px' }}>
-            <Typography.Title level={5} style={{ margin: '8px 0', fontSize: '14px' }}>
-              Ship Control - {selectedShip.name}
-            </Typography.Title>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              {/* Course Control */}
-              <div>
-                <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
-                  Current Course: {Math.round(selectedShip.heading)}°
-                </Typography.Text>
-                {selectedShip.demandedCourse !== undefined && (
-                  <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
-                    Demanded Course: {Math.round(selectedShip.demandedCourse)}°
-                  </Typography.Text>
-                )}
-                <Slider
-                    min={0}
-                    max={359}
-                    value={selectedShip.demandedCourse ?? selectedShip.heading}
-                    onChange={(value) => onUpdateShip?.(selectedShip.id, { demandedCourse: value })}
-                    styles={{
-                      track: { backgroundColor: isDarkMode ? '#177ddc' : undefined },
-                      rail: { backgroundColor: isDarkMode ? '#434343' : undefined },
-                      handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
-                    }}
-                    tooltip={{
-                      formatter: (value) => `${value}°`,
-                      overlayInnerStyle: isDarkMode ? {
-                        backgroundColor: '#1f1f1f',
-                        color: '#d9d9d9'
-                      } : undefined
-                    }}
-                />
-              </div>
-              {/* Speed Control */}
-              <div>
-                <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
-                  Current Speed: {selectedShip.speed.toFixed(1)} kts
-                </Typography.Text>
-                {selectedShip.demandedSpeed !== undefined && (
-                  <Typography.Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)' }}>
-                    Demanded Speed: {selectedShip.demandedSpeed.toFixed(1)} kts
-                  </Typography.Text>
-                )}
-                <Slider
-                    min={0}
-                    max={30}
-                    step={0.5}
-                    value={selectedShip.demandedSpeed ?? selectedShip.speed}
-                    onChange={(value) => onUpdateShip?.(selectedShip.id, { demandedSpeed: value })}
-                    styles={{
-                      track: { backgroundColor: isDarkMode ? '#177ddc' : undefined },
-                      rail: { backgroundColor: isDarkMode ? '#434343' : undefined },
-                      handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
-                    }}
-                    tooltip={{
-                      formatter: (value) => `${value} kts`,
-                      overlayInnerStyle: isDarkMode ? {
-                        backgroundColor: '#1f1f1f',
-                        color: '#d9d9d9'
-                      } : undefined
-                    }}
-                />
-              </div>
-            </div>
-          </div>
+          <ShipControl
+            ship={selectedShip}
+            isDarkMode={isDarkMode}
+            onUpdateShip={onUpdateShip!}
+          />
         )}
       </Space>
     </Sider>
