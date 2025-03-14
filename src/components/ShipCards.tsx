@@ -24,10 +24,26 @@ export const ShipCards: React.FC<ShipCardsProps> = ({ ships }) => {
             bodyStyle={{ padding: '4px 8px' }}
             style={{ 
               width: '100%',
-              borderLeft: isChangingCourseOrSpeed ? '3px solid #ff4d4f' : '3px solid #1890ff'
+              borderLeft: ship.status === 'disabled' ? '3px solid #000000' : 
+                         ship.status === 'aground' ? '3px solid #595959' : 
+                         isChangingCourseOrSpeed ? '3px solid #ff4d4f' : 
+                         '3px solid #1890ff'
             }}
           >
             <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
+              <div>
+                <strong>Status:</strong>{' '}
+                <span style={{
+                  color: ship.status === 'disabled' ? '#000000' : 
+                         ship.status === 'aground' ? '#595959' : 
+                         ship.status === 'underway' ? '#52c41a' : 
+                         ship.status === 'anchored' ? '#1890ff' : 
+                         ship.status === 'moored' ? '#722ed1' : '#000000',
+                  fontWeight: 'bold'
+                }}>
+                  {ship.status.charAt(0).toUpperCase() + ship.status.slice(1)}
+                </span>
+              </div>
               <div><strong>Type:</strong> {ship.type}</div>
               <div>
                 <strong>Course:</strong> {ship.heading.toFixed(1)}°

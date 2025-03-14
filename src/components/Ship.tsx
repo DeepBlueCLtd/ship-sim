@@ -76,19 +76,32 @@ export const Ship: React.FC<ShipProps> = ({ ship, isChangingCourseOrSpeed }) => 
     <Polygon
       positions={cornerPoints}
       pathOptions={{
-        color: ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#1890ff'),
-        fillColor: ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff'),
-        fillOpacity: 0.8,
+        color: ship.status === 'disabled' ? '#000000' : (ship.status === 'aground' ? '#595959' : (ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#1890ff'))),
+        fillColor: ship.status === 'disabled' ? '#000000' : (ship.status === 'aground' ? '#595959' : (ship.collisionRisks.length > 0 ? '#ff4d4f' : (isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff'))),
+        fillOpacity: ship.status === 'disabled' || ship.status === 'aground' ? 0.9 : 0.8,
         weight: 2
       }}
     >
       <Popup>
         <div>
           <h3>{ship.name}</h3>
-          {ship.avoidingLand && (
-            <p style={{ color: '#ff4d4f' }}>⚠️ Avoiding Land</p>
-          )}
+          <p>
+            Status: <span style={{
+              color: ship.status === 'disabled' ? '#000000' : 
+                     ship.status === 'aground' ? '#595959' : 
+                     ship.status === 'underway' ? '#52c41a' : 
+                     ship.status === 'anchored' ? '#1890ff' : 
+                     ship.status === 'moored' ? '#722ed1' : '#000000',
+              fontWeight: 'bold'
+            }}>
+              {ship.status.charAt(0).toUpperCase() + ship.status.slice(1)}
+            </span>
+            {ship.avoidingLand && (
+              <span style={{ color: '#ff4d4f', marginLeft: '8px' }}>⚠️ Avoiding Land</span>
+            )}
+          </p>
           <p>Type: {ship.type}</p>
+          <p>Dimensions: {(ship.dimensions.length).toFixed(0)}m × {(ship.dimensions.beam).toFixed(0)}m</p>
           <p>
             Speed: {ship.speed.toFixed(1)} knots
             {ship.demandedSpeed !== undefined && (
@@ -123,8 +136,6 @@ export const Ship: React.FC<ShipProps> = ({ ship, isChangingCourseOrSpeed }) => 
               </span>
             )}
           </p>
-          <p>Dimensions: {(ship.dimensions.length).toFixed(0)}m × {(ship.dimensions.beam).toFixed(0)}m</p>
-          <p>Status: {ship.status}</p>
           {ship.collisionRisks.length > 0 && (
             <div style={{ marginTop: '8px', borderTop: '1px solid #d9d9d9', paddingTop: '8px' }}>
               <p style={{ color: '#ff4d4f', margin: '0 0 8px 0' }}>

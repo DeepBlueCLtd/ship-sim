@@ -45,8 +45,45 @@ function App() {
       setShips(prevShips => {
         const updatedShips = { ...prevShips };
         
+        // Check if ships are too far from spawn point (30 km = ~16.2 nm)
+        const SPAWN_POINT = { latitude: 50.3, longitude: -1.4 };
+        const MAX_DISTANCE_KM = 30;
+        const MAX_DISTANCE_NM = MAX_DISTANCE_KM / 1.852; // Convert km to nm
+
+        Object.values(updatedShips).forEach(ship => {
+          if (ship.status !== 'underway') return;
+
+          // Calculate distance from spawn point in nautical miles
+          const distanceFromSpawn = Math.sqrt(
+            Math.pow((ship.position.latitude - SPAWN_POINT.latitude) * 60, 2) +
+            Math.pow((ship.position.longitude - SPAWN_POINT.longitude) * 60 * Math.cos(ship.position.latitude * Math.PI / 180), 2)
+          );
+
+          // If ship is too far, set demanded course back to spawn point
+          if (distanceFromSpawn > MAX_DISTANCE_NM) {
+            // Calculate bearing to spawn point
+            const dLon = (SPAWN_POINT.longitude - ship.position.longitude) * Math.PI / 180;
+            const lat1 = ship.position.latitude * Math.PI / 180;
+            const lat2 = SPAWN_POINT.latitude * Math.PI / 180;
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+            
+            ship.demandedCourse = bearing;
+          }
+        });
+
         // First, check for potential collisions and update demanded courses
         Object.values(updatedShips).forEach(ship => {
+          // Skip collision checks for disabled or aground ships
+          if (ship.status === 'disabled' || ship.status === 'aground') {
+            ship.collisionRisks = [];
+            ship.demandedCourse = undefined;
+            ship.demandedSpeed = undefined;
+            ship.normalSpeed = undefined;
+            ship.avoidingLand = false;
+            return;
+          }
           // Get positions and movement data of all other ships
           const otherShips = Object.values(updatedShips)
             .filter(other => other.id !== ship.id)
@@ -115,8 +152,70 @@ function App() {
           }
         });
 
+        // Check for ships running aground
+        Object.values(updatedShips).forEach(ship => {
+          // Skip already disabled or aground ships
+          if (ship.status === 'disabled' || ship.status === 'aground') return;
+
+          // Convert ship length to nautical miles
+          const shipLengthNm = ship.dimensions.length / 1852;
+
+          // Check distance to each land polygon
+          for (const polygon of landPolygons) {
+            // Find minimum distance to any point in the polygon
+            let minDistance = Number.MAX_VALUE;
+            for (let i = 0; i < polygon.length; i++) {
+              const point = polygon[i];
+              const distance = Math.sqrt(
+                Math.pow((ship.position.latitude - point[0]) * 60, 2) +
+                Math.pow((ship.position.longitude - point[1]) * 60 * Math.cos(ship.position.latitude * Math.PI / 180), 2)
+              );
+              minDistance = Math.min(minDistance, distance);
+            }
+
+            // If ship is closer than its length to land, it runs aground
+            if (minDistance < shipLengthNm) {
+              updatedShips[ship.id] = { ...updatedShips[ship.id], status: 'aground' };
+              break;
+            }
+          }
+        });
+
+        // Check for actual collisions between ships
+        Object.values(updatedShips).forEach(ship => {
+          if (ship.status === 'disabled' || ship.status === 'aground') return; // Skip disabled or aground ships
+          
+          Object.values(updatedShips).forEach(otherShip => {
+            if (ship.id === otherShip.id || otherShip.status === 'disabled') return;
+
+            // Calculate distance in nautical miles
+            const distanceInNm = Math.sqrt(
+              Math.pow((ship.position.latitude - otherShip.position.latitude) * 60, 2) +
+              Math.pow((ship.position.longitude - otherShip.position.longitude) * 60 * Math.cos(ship.position.latitude * Math.PI / 180), 2)
+            );
+
+            // Convert ship lengths to nautical miles
+            const shipLengthNm = ship.dimensions.length / 1852;
+            const otherShipLengthNm = otherShip.dimensions.length / 1852;
+
+            // If distance is less than sum of ship lengths, handle collision
+            if (distanceInNm < (shipLengthNm + otherShipLengthNm) / 2) { // Divide by 2 since we're measuring from ship centers
+              if (ship.dimensions.length === otherShip.dimensions.length) {
+                // Both ships become disabled if equal length
+                updatedShips[ship.id] = { ...updatedShips[ship.id], status: 'disabled' };
+                updatedShips[otherShip.id] = { ...updatedShips[otherShip.id], status: 'disabled' };
+              } else if (ship.dimensions.length < otherShip.dimensions.length) {
+                // Shorter ship becomes disabled
+                updatedShips[ship.id] = { ...updatedShips[ship.id], status: 'disabled' };
+              }
+            }
+          });
+        });
+
         // Then update all ship positions
         Object.values(updatedShips).forEach(ship => {
+          // Skip position updates for disabled or aground ships
+          if (ship.status === 'disabled' || ship.status === 'aground') return;
           // Update heading and turn rate based on demanded course
           const [newHeading, newTurnRate] = calculateNewHeading(ship.heading, ship.turnRate, ship.demandedCourse, 1);
           ship.heading = newHeading;
