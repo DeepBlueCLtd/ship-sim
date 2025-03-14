@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Layout } from 'antd';
 import { ControlPanel } from './components/ControlPanel';
 import { ShipMap } from './components/ShipMap';
 import { ShipDictionary, SimulationTime } from './types';
 import { generateRandomShips } from './utils/shipGenerator';
+import { calculateShipMovement, calculateNewHeading, calculateNewSpeed } from './utils/geoUtils';
 import './App.css';
 
 const { Content } = Layout;
@@ -46,6 +47,17 @@ function App() {
             1
           );
           
+          // Add current position to trail (limit to 30 points)
+          ship.trail = [
+            {
+              latitude: ship.position.latitude,
+              longitude: ship.position.longitude,
+              timestamp: new Date(simulationTime.timestamp)
+            },
+            ...ship.trail.slice(0, 29)
+          ];
+
+          // Update to new position
           ship.position = {
             latitude: newLat,
             longitude: newLon
@@ -65,7 +77,7 @@ function App() {
     }, 2000); // Update every 2 seconds
 
     return () => clearInterval(interval);
-  }, [simulationTime.running]);
+  }, [simulationTime.running, simulationTime.timestamp]);
 
   const toggleSimulation = useCallback(() => {
     setSimulationTime(prev => ({

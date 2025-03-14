@@ -29,6 +29,12 @@ export interface Ship {
   type: string;
   /** Current status of the ship */
   status: 'underway' | 'anchored' | 'moored' | 'aground';
+  /** Trail of previous positions (most recent first) */
+  trail: Array<{
+    latitude: number;
+    longitude: number;
+    timestamp: Date;
+  }>;
 }
 
 /**
@@ -46,4 +52,6 @@ export interface SimulationTime {
   timestamp: Date;
   /** Whether the simulation is currently running */
   running: boolean;
+  /** Maximum number of positions to keep in ship trails */
+  trailLength: number;
 }

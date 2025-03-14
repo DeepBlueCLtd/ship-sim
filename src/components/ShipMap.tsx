@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, CircleMarker, Popup, Polygon } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ShipDictionary } from '../types';
 import gbData from '../assets/gb.json';
@@ -45,8 +45,20 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships }) => {
         const isChangingCourseOrSpeed = ship.demandedCourse !== undefined || ship.demandedSpeed !== undefined;
         return (
           <React.Fragment key={ship.id}>
+            {/* Ship trail */}
+            {ship.trail.length > 0 && (
+              <Polyline
+                positions={ship.trail.map(pos => [pos.latitude, pos.longitude])}
+                pathOptions={{
+                  color: isChangingCourseOrSpeed ? '#ff7875' : '#40a9ff',
+                  opacity: 0.4,
+                  weight: 2,
+                  dashArray: '5,10'
+                }}
+              />
+            )}
+            {/* Ship marker */}
             <CircleMarker
-
               center={[ship.position.latitude, ship.position.longitude]}
               radius={6}
               pathOptions={{
