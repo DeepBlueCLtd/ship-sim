@@ -268,8 +268,12 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                 radius={0}
               >
                 {notAgroundOrDisabled(ship.status) && (ship.avoidingLand || ship.collisionRisks.length > 0) && (
-                  <Tooltip permanent={true} direction='top'>
-                    <div style={{ textAlign: 'center' }}>
+                  <Tooltip permanent={true} direction='top' className={`transparent-tooltip ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
+                    <div style={{ 
+                      textAlign: 'center', 
+                      backgroundColor: 'transparent',
+                      color: isDarkMode ? '#ffffff' : '#000000'
+                    }}>
                       {/* Show what we're avoiding */}
                       {ship.avoidingLand && (
                         <div style={{ color: '#ff4d4f', fontWeight: 'bold' }}>⚠️ Avoiding Land</div>
@@ -280,8 +284,8 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
                         </div>
                       )}
                       {/* Always show current course and speed when avoiding */}
-                      <div>Current: {ship.heading.toFixed(0)}°</div>
-                      <div>Speed: {ship.speed.toFixed(1)} kts</div>
+                      <div style={{ color: isDarkMode ? '#ffffff' : '#000000' }}>Current: {ship.heading.toFixed(0)}°</div>
+                      <div style={{ color: isDarkMode ? '#ffffff' : '#000000' }}>Speed: {ship.speed.toFixed(1)} kts</div>
                       {/* Show demanded course if different */}
                       {ship.demandedCourse !== undefined && ship.demandedCourse !== ship.heading && (
                         <div style={{ color: '#ff7875' }}>

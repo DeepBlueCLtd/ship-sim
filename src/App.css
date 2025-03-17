@@ -15,3 +15,30 @@
   height: 100vh !important;
   width: 100% !important;
 }
+
+/* Transparent tooltip styles */
+.transparent-tooltip .leaflet-tooltip {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  border: none !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(3px) !important;
+  border-radius: 4px !important;
+}
+
+/* Dark mode tooltip */
+.transparent-tooltip.dark-mode .leaflet-tooltip {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Light mode tooltip */
+.transparent-tooltip.light-mode .leaflet-tooltip {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Remove tooltip arrow */
+.transparent-tooltip .leaflet-tooltip-top:before,
+.transparent-tooltip .leaflet-tooltip-bottom:before,
+.transparent-tooltip .leaflet-tooltip-left:before,
+.transparent-tooltip .leaflet-tooltip-right:before {
+  display: none !important;
+}
