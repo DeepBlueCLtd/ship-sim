@@ -153,6 +153,8 @@ export function calculateNewHeading(
       ? 0 
       : currentTurnRate - Math.sign(currentTurnRate) * turnDeceleration * minutes * 60;
     
+    console.log(`newTurnRate 1: ${newTurnRate} ${currentTurnRate}`)
+
     return [(currentHeading + newTurnRate * minutes + 360) % 360, newTurnRate];
   }
 
@@ -174,6 +176,7 @@ export function calculateNewHeading(
   const turnRateChange = Math.sign(turnRateDiff) * Math.min(Math.abs(turnRateDiff), maxRateChange);
   const newTurnRate = currentTurnRate + turnRateChange;
 
+
   // Calculate new heading
   const newHeading = (currentHeading + newTurnRate * minutes + 360) % 360;
 
@@ -183,7 +186,11 @@ export function calculateNewHeading(
     return [demandedCourse, 0];
   }
 
-  return [newHeading, newTurnRate];
+  console.log('newTurnRate 2a:', newHeading, '// ', newTurnRate)
+  const res: [number, number] = [newHeading, newTurnRate];
+  console.log('newTurnRate result:', res)
+
+  return res;
 }
 
 /**

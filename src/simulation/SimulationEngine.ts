@@ -79,6 +79,9 @@ export class SimulationEngine {
       this.movementStrategy.updateMovement(ship, minutes, simulationTime.timestamp)
     );
 
+    // Limit trail length for all ships
+    updatedShips = this.limitTrailLength(updatedShips);
+
     return updatedShips;
   }
 
@@ -178,5 +181,24 @@ export class SimulationEngine {
       ...this.config,
       ...config
     };
+  }
+
+  /**
+   * Limit trail length for all ships to the configured maximum
+   * @param ships Array of ships to process
+   * @returns Updated ships with limited trail length
+   */
+  private limitTrailLength(ships: Ship[]): Ship[] {
+    return ships.map(ship => {
+      if (ship.trail.length <= this.config.maxTrailLength) {
+        return ship;
+      }
+      
+      // Create a new ship object with the trail limited to maxTrailLength
+      return {
+        ...ship,
+        trail: ship.trail.slice(-this.config.maxTrailLength) // Keep only the most recent points
+      };
+    });
   }
 }
