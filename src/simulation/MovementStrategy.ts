@@ -14,9 +14,10 @@ export interface MovementStrategy {
    * Update ship movement for a given time interval
    * @param ship The ship to update
    * @param minutes Time interval in minutes
+   * @param simulationTime Current simulation time
    * @returns Updated ship with new position, heading, and speed
    */
-  updateMovement(ship: Ship, minutes: number): Ship;
+  updateMovement(ship: Ship, minutes: number, simulationTime?: Date): Ship;
 }
 
 /**
@@ -24,7 +25,7 @@ export interface MovementStrategy {
  * Uses maritime navigation conventions and gradual speed/heading changes
  */
 export class DefaultMovementStrategy implements MovementStrategy {
-  updateMovement(ship: Ship, minutes: number): Ship {
+  updateMovement(ship: Ship, minutes: number, simulationTime?: Date): Ship {
     // Skip position updates for disabled or aground ships
     if (ship.status === 'disabled' || ship.status === 'aground') {
       return ship;
@@ -72,7 +73,7 @@ export class DefaultMovementStrategy implements MovementStrategy {
       {
         latitude: ship.position.latitude,
         longitude: ship.position.longitude,
-        timestamp: new Date(), // This should be the simulation time
+        timestamp: simulationTime || new Date(), // Use simulation time if provided
         heading: ship.heading,
         speed: ship.speed,
         demandedCourse: ship.demandedCourse,

@@ -50,17 +50,7 @@ export interface Ship {
   /** Unique color for the ship */
   color: string;
   /** Trail of previous positions and states (most recent first) */
-  trail: Array<{
-    latitude: number;
-    longitude: number;
-    timestamp: Date;
-    heading: number;
-    speed: number;
-    demandedCourse?: number;
-    demandedSpeed?: number;
-    status: 'underway' | 'anchored' | 'moored' | 'aground' | 'disabled';
-    avoidingLand: boolean;
-  }>;
+  trail: ShipTrailPoint[];
   /** List of ships that pose collision risks */
   collisionRisks: CollisionRisk[];
   /** Whether the ship is currently avoiding land */
@@ -74,6 +64,30 @@ export interface Ship {
 /**
  * Array of ships in the simulation
  */
+/**
+ * Represents a point in a ship's trail history
+ */
+export interface ShipTrailPoint {
+  /** Latitude coordinate */
+  latitude: number;
+  /** Longitude coordinate */
+  longitude: number;
+  /** Timestamp when this position was recorded */
+  timestamp: Date;
+  /** Ship's heading at this position in degrees (0-359) */
+  heading: number;
+  /** Ship's speed at this position in knots */
+  speed: number;
+  /** Demanded course at this position in degrees (0-359), if any */
+  demandedCourse?: number;
+  /** Demanded speed at this position in knots, if any */
+  demandedSpeed?: number;
+  /** Ship's status at this position */
+  status: 'underway' | 'anchored' | 'moored' | 'aground' | 'disabled';
+  /** Whether the ship was avoiding land at this position */
+  avoidingLand: boolean;
+}
+
 export type ShipDictionary = Ship[];
 
 /**

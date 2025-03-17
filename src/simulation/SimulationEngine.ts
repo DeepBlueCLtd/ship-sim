@@ -48,7 +48,7 @@ export class SimulationEngine {
   updateSimulation(
     ships: Ship[],
     landPolygons: Array<[number, number][]>,
-    _simulationTime: SimulationTime, // Prefixed with underscore to indicate it's intentionally unused
+    simulationTime: SimulationTime,
     minutes: number = 1
   ): Ship[] {
     if (ships.length === 0) return [];
@@ -76,7 +76,7 @@ export class SimulationEngine {
 
     // Then update all ship movements
     updatedShips = updatedShips.map(ship => 
-      this.movementStrategy.updateMovement(ship, minutes)
+      this.movementStrategy.updateMovement(ship, minutes, simulationTime.timestamp)
     );
 
     return updatedShips;

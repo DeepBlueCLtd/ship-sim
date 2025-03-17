@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
-  Legend, ResponsiveContainer, Brush
+  Legend, ResponsiveContainer
 } from 'recharts';
 import { Ship } from '../types';
 import { Typography } from 'antd';
@@ -25,8 +25,16 @@ export const ShipHistoryGraph: React.FC<ShipHistoryGraphProps> = ({ ship, isDark
 
   // Add current position as the latest point
   data.push({
-    time: new Date().toLocaleTimeString(),
-    timestamp: new Date(),
+    time: new Date(ship.trail.length > 0 ? 
+      // If there's trail data, use the latest timestamp + 1 minute
+      new Date(ship.trail[0].timestamp).getTime() + 60000 : 
+      // Otherwise use current time
+      new Date().getTime()
+    ).toLocaleTimeString(),
+    timestamp: new Date(ship.trail.length > 0 ? 
+      new Date(ship.trail[0].timestamp).getTime() + 60000 : 
+      new Date().getTime()
+    ),
     heading: ship.heading,
     speed: ship.speed,
     demandedCourse: ship.demandedCourse,
@@ -101,6 +109,13 @@ export const ShipHistoryGraph: React.FC<ShipHistoryGraphProps> = ({ ship, isDark
               }}
               itemStyle={{ color: textColor }}
               labelStyle={{ color: textColor, fontWeight: 'bold' }}
+              formatter={(value, name) => {
+                // Round numeric values to 1 decimal place
+                if (typeof value === 'number') {
+                  return [value.toFixed(1), name];
+                }
+                return [value, name];
+              }}
             />
             <Legend 
               wrapperStyle={{ color: textColor }}
@@ -113,6 +128,7 @@ export const ShipHistoryGraph: React.FC<ShipHistoryGraphProps> = ({ ship, isDark
               stroke={headingColor} 
               activeDot={{ r: 8 }}
               dot={{ r: 3 }}
+              isAnimationActive={false}
             />
             <Line 
               yAxisId="heading"
@@ -122,6 +138,7 @@ export const ShipHistoryGraph: React.FC<ShipHistoryGraphProps> = ({ ship, isDark
               stroke={headingColor} 
               strokeDasharray="5 5"
               dot={{ r: 3 }}
+              isAnimationActive={false}
             />
             <Line 
               yAxisId="speed"
@@ -131,6 +148,7 @@ export const ShipHistoryGraph: React.FC<ShipHistoryGraphProps> = ({ ship, isDark
               stroke={speedColor} 
               activeDot={{ r: 8 }}
               dot={{ r: 3 }}
+              isAnimationActive={false}
             />
             <Line 
               yAxisId="speed"
@@ -140,14 +158,9 @@ export const ShipHistoryGraph: React.FC<ShipHistoryGraphProps> = ({ ship, isDark
               stroke={speedColor} 
               strokeDasharray="5 5"
               dot={{ r: 3 }}
+              isAnimationActive={false}
             />
-            <Brush 
-              dataKey="time" 
-              height={30} 
-              stroke={isDarkMode ? '#177ddc' : '#1890ff'}
-              fill={isDarkMode ? '#141414' : '#ffffff'}
-              tickFormatter={() => ''}
-            />
+
           </LineChart>
         </ResponsiveContainer>
       </div>

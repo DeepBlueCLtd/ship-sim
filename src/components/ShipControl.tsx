@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Slider } from 'antd';
+import { Typography, InputNumber, Button, Space } from 'antd';
 import { Ship } from '../types';
 
 interface ShipControlProps {
@@ -30,115 +30,123 @@ export const ShipControl: React.FC<ShipControlProps> = ({
         {/* Course Control */}
         <div>
           <div style={{ marginBottom: '4px' }}>
-            <Typography.Text style={{ 
-              fontSize: '11px', 
-              display: 'block', 
-              color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
-            }}>
-              Course
-            </Typography.Text>
-            <Typography.Text style={{ 
-              fontSize: '14px', 
-              display: 'block', 
-              color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
-            }}>
-              {Math.round(ship.heading)}°
-            </Typography.Text>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <Typography.Text style={{ 
+                  fontSize: '11px', 
+                  display: 'block', 
+                  color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
+                }}>
+                  Course
+                </Typography.Text>
+                <Typography.Text style={{ 
+                  fontSize: '14px', 
+                  display: 'block', 
+                  color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
+                }}>
+                  {Math.round(ship.heading)}°
+                </Typography.Text>
+              </div>
+              <Space.Compact style={{ width: '120px' }}>
+                <InputNumber
+                  min={0}
+                  max={345} /* Max is 345 to allow for 15-degree increments up to 359 */
+                  value={Math.round(courseValue / 15) * 15} /* Round to nearest 15 degrees */
+                  onChange={(value) => {
+                    if (value !== null) {
+                      const newValue = Math.round(value / 15) * 15;
+                      setCourseValue(newValue);
+                      onUpdateShip(ship.id, { demandedCourse: newValue });
+                    }
+                  }}
+                  style={{ width: '60px' }}
+                  step={15}
+                  controls={false}
+                />
+                <Button 
+                  onClick={() => {
+                    const newValue = (courseValue + 15) % 360;
+                    setCourseValue(newValue);
+                    onUpdateShip(ship.id, { demandedCourse: newValue });
+                  }}
+                  style={{ backgroundColor: isDarkMode ? '#177ddc' : undefined }}
+                >
+                  +
+                </Button>
+                <Button 
+                  onClick={() => {
+                    const newValue = (courseValue - 15 + 360) % 360;
+                    setCourseValue(newValue);
+                    onUpdateShip(ship.id, { demandedCourse: newValue });
+                  }}
+                  style={{ backgroundColor: isDarkMode ? '#177ddc' : undefined }}
+                >
+                  -
+                </Button>
+              </Space.Compact>
+            </div>
           </div>
-          <div style={{ marginBottom: '6px' }}>
-            <Typography.Text style={{ 
-              fontSize: '11px', 
-              display: 'block', 
-              color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
-            }}>
-              Demand
-            </Typography.Text>
-            <Typography.Text style={{ 
-              fontSize: '14px', 
-              display: 'block', 
-              color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
-            }}>
-              {Math.round(courseValue)}°
-            </Typography.Text>
-          </div>
-          <Slider
-            min={0}
-            max={359}
-            value={courseValue}
-            onChange={(value) => {
-              setCourseValue(value);
-              onUpdateShip(ship.id, { demandedCourse: value });
-            }}
-            styles={{
-              track: { backgroundColor: isDarkMode ? '#177ddc' : undefined, height: 4 },
-              rail: { backgroundColor: isDarkMode ? '#434343' : undefined, height: 4 },
-              handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
-            }}
-            tooltip={{
-              formatter: (value) => `${value}°`,
-              overlayInnerStyle: isDarkMode ? {
-                backgroundColor: '#1f1f1f',
-                color: '#d9d9d9'
-              } : undefined
-            }}
-          />
+
         </div>
         {/* Speed Control */}
         <div>
           <div style={{ marginBottom: '4px' }}>
-            <Typography.Text style={{ 
-              fontSize: '11px', 
-              display: 'block', 
-              color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
-            }}>
-              Speed
-            </Typography.Text>
-            <Typography.Text style={{ 
-              fontSize: '14px', 
-              display: 'block', 
-              color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
-            }}>
-              {ship.speed.toFixed(1)} kts
-            </Typography.Text>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <Typography.Text style={{ 
+                  fontSize: '11px', 
+                  display: 'block', 
+                  color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
+                }}>
+                  Speed
+                </Typography.Text>
+                <Typography.Text style={{ 
+                  fontSize: '14px', 
+                  display: 'block', 
+                  color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
+                }}>
+                  {ship.speed.toFixed(1)} kts
+                </Typography.Text>
+              </div>
+              <Space.Compact style={{ width: '120px' }}>
+                <InputNumber
+                  min={0}
+                  max={30}
+                  value={Math.round(speedValue / 2) * 2} /* Round to nearest 2 knots */
+                  onChange={(value) => {
+                    if (value !== null) {
+                      const newValue = Math.round(value / 2) * 2;
+                      setSpeedValue(newValue);
+                      onUpdateShip(ship.id, { demandedSpeed: newValue });
+                    }
+                  }}
+                  style={{ width: '60px' }}
+                  step={2}
+                  controls={false}
+                />
+                <Button 
+                  onClick={() => {
+                    const newValue = Math.min(30, speedValue + 2);
+                    setSpeedValue(newValue);
+                    onUpdateShip(ship.id, { demandedSpeed: newValue });
+                  }}
+                  style={{ backgroundColor: isDarkMode ? '#177ddc' : undefined }}
+                >
+                  +
+                </Button>
+                <Button 
+                  onClick={() => {
+                    const newValue = Math.max(0, speedValue - 2);
+                    setSpeedValue(newValue);
+                    onUpdateShip(ship.id, { demandedSpeed: newValue });
+                  }}
+                  style={{ backgroundColor: isDarkMode ? '#177ddc' : undefined }}
+                >
+                  -
+                </Button>
+              </Space.Compact>
+            </div>
           </div>
-          <div style={{ marginBottom: '6px' }}>
-            <Typography.Text style={{ 
-              fontSize: '11px', 
-              display: 'block', 
-              color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
-            }}>
-              Demand
-            </Typography.Text>
-            <Typography.Text style={{ 
-              fontSize: '14px', 
-              display: 'block', 
-              color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
-            }}>
-              {speedValue.toFixed(1)} kts
-            </Typography.Text>
-          </div>
-          <Slider
-            min={0}
-            max={30}
-            step={0.5}
-            value={speedValue}
-            onChange={(value) => {
-              setSpeedValue(value);
-              onUpdateShip(ship.id, { demandedSpeed: value });
-            }}
-            styles={{
-              track: { backgroundColor: isDarkMode ? '#177ddc' : undefined, height: 4 },
-              rail: { backgroundColor: isDarkMode ? '#434343' : undefined, height: 4 },
-              handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
-            }}
-            tooltip={{
-              formatter: (value) => `${value} kts`,
-              overlayInnerStyle: isDarkMode ? {
-                backgroundColor: '#1f1f1f',
-                color: '#d9d9d9'
-              } : undefined
-            }}
-          />
         </div>
       </div>
     </div>
