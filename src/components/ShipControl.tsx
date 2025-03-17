@@ -22,39 +22,39 @@ export const ShipControl: React.FC<ShipControlProps> = ({
     setSpeedValue(ship.demandedSpeed ?? ship.speed);
   }, [ship.demandedCourse, ship.demandedSpeed, ship.heading, ship.speed]);
   return (
-    <div style={{ marginTop: '16px' }}>
-      <Typography.Title level={5} style={{ margin: '8px 0', fontSize: '14px' }}>
-        Ship Control - {ship.name}
+    <div style={{ marginTop: '8px' }}>
+      <Typography.Title level={5} style={{ margin: '4px 0', fontSize: '13px' }}>
+        {ship.name}
       </Typography.Title>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
         {/* Course Control */}
         <div>
-          <div style={{ marginBottom: '8px' }}>
+          <div style={{ marginBottom: '4px' }}>
             <Typography.Text style={{ 
-              fontSize: '12px', 
+              fontSize: '11px', 
               display: 'block', 
               color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
             }}>
-              Current Course
+              Course
             </Typography.Text>
             <Typography.Text style={{ 
-              fontSize: '16px', 
+              fontSize: '14px', 
               display: 'block', 
               color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
             }}>
               {Math.round(ship.heading)}°
             </Typography.Text>
           </div>
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ marginBottom: '6px' }}>
             <Typography.Text style={{ 
-              fontSize: '12px', 
+              fontSize: '11px', 
               display: 'block', 
               color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
             }}>
-              Demanded Course
+              Demand
             </Typography.Text>
             <Typography.Text style={{ 
-              fontSize: '16px', 
+              fontSize: '14px', 
               display: 'block', 
               color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
             }}>
@@ -70,8 +70,8 @@ export const ShipControl: React.FC<ShipControlProps> = ({
               onUpdateShip(ship.id, { demandedCourse: value });
             }}
             styles={{
-              track: { backgroundColor: isDarkMode ? '#177ddc' : undefined },
-              rail: { backgroundColor: isDarkMode ? '#434343' : undefined },
+              track: { backgroundColor: isDarkMode ? '#177ddc' : undefined, height: 4 },
+              rail: { backgroundColor: isDarkMode ? '#434343' : undefined, height: 4 },
               handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
             }}
             tooltip={{
@@ -85,32 +85,32 @@ export const ShipControl: React.FC<ShipControlProps> = ({
         </div>
         {/* Speed Control */}
         <div>
-          <div style={{ marginBottom: '8px' }}>
+          <div style={{ marginBottom: '4px' }}>
             <Typography.Text style={{ 
-              fontSize: '12px', 
+              fontSize: '11px', 
               display: 'block', 
               color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
             }}>
-              Current Speed
+              Speed
             </Typography.Text>
             <Typography.Text style={{ 
-              fontSize: '16px', 
+              fontSize: '14px', 
               display: 'block', 
               color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
             }}>
               {ship.speed.toFixed(1)} kts
             </Typography.Text>
           </div>
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ marginBottom: '6px' }}>
             <Typography.Text style={{ 
-              fontSize: '12px', 
+              fontSize: '11px', 
               display: 'block', 
               color: isDarkMode ? '#d9d9d9' : 'rgba(0, 0, 0, 0.45)'
             }}>
-              Demanded Speed
+              Demand
             </Typography.Text>
             <Typography.Text style={{ 
-              fontSize: '16px', 
+              fontSize: '14px', 
               display: 'block', 
               color: isDarkMode ? '#fff' : 'rgba(0, 0, 0, 0.85)'
             }}>
@@ -127,8 +127,8 @@ export const ShipControl: React.FC<ShipControlProps> = ({
               onUpdateShip(ship.id, { demandedSpeed: value });
             }}
             styles={{
-              track: { backgroundColor: isDarkMode ? '#177ddc' : undefined },
-              rail: { backgroundColor: isDarkMode ? '#434343' : undefined },
+              track: { backgroundColor: isDarkMode ? '#177ddc' : undefined, height: 4 },
+              rail: { backgroundColor: isDarkMode ? '#434343' : undefined, height: 4 },
               handle: { borderColor: isDarkMode ? '#177ddc' : undefined }
             }}
             tooltip={{

@@ -39,17 +39,17 @@ export class BehaviorBasedCollisionAvoidance implements CollisionAvoidanceStrate
     
     // If no decision was made, clear collision avoidance state if it was active
     if (!decision) {
-      if (ship.collisionRisks.length > 0 || ship.avoidingLand) {
-        // Clear collision avoidance state
-        updatedShip.collisionRisks = [];
-        updatedShip.avoidingLand = false;
-        
-        // Return to normal speed if it was stored
-        if (updatedShip.normalSpeed !== undefined) {
-          updatedShip.demandedSpeed = updatedShip.normalSpeed;
-          updatedShip.normalSpeed = undefined;
-        }
+      // Always clear collision avoidance state when no behaviors are active
+      updatedShip.collisionRisks = [];
+      updatedShip.avoidingLand = false;
+      updatedShip.avoidanceReason = undefined;
+      
+      // Return to normal speed if it was stored
+      if (updatedShip.normalSpeed !== undefined) {
+        updatedShip.demandedSpeed = updatedShip.normalSpeed;
+        updatedShip.normalSpeed = undefined;
       }
+      
       return updatedShip;
     }
     
@@ -75,7 +75,13 @@ export class BehaviorBasedCollisionAvoidance implements CollisionAvoidanceStrate
     }
     
     // Set avoidingLand flag based on active behavior
+    // Only set to true if Ground Avoidance is active, otherwise explicitly set to false
     updatedShip.avoidingLand = activeBehavior?.name === 'Ground Avoidance';
+    
+    // If we're not avoiding land but the flag was previously set, make sure it's cleared
+    if (!updatedShip.avoidingLand && ship.avoidingLand) {
+      updatedShip.avoidingLand = false;
+    }
     
     // Store the reason for the decision
     updatedShip.avoidanceReason = decision.reason;

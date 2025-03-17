@@ -8,7 +8,7 @@ import { SPAWN_POINT, MAX_DISTANCE_NM } from '../../config/constants';
  */
 export class ReturnToSpawnBehavior implements NavigationBehavior {
   readonly name = 'Return To Spawn';
-  readonly priority = 3; // Lowest priority - only applies when no other behaviors are active
+  readonly priority = 8; // Lowest priority - only applies when no other behaviors are active
   
   evaluate(
     ship: Ship, 

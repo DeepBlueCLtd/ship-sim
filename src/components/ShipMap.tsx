@@ -13,11 +13,12 @@ interface ShipMapProps {
   ships: ShipDictionary;
   displayedTrailLength?: number;
   isDarkMode?: boolean;
+  selectedShipId?: string | null;
 }
 
 const notAgroundOrDisabled = (state: ShipType['status']) => state !== 'aground' && state !== 'disabled';
 
-export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 30, isDarkMode = false }) => {
+export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 30, isDarkMode = false, selectedShipId = null }) => {
 
   return (
     <MapContainer
@@ -178,6 +179,22 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
               }}
             />)}
             {/* 2. Ship trail */}
+              {/* highlight path, if selected */}
+              { ship.id === selectedShipId && (
+                <Polyline
+                  positions={[
+                    ...(ship.trail.length > 0 ? ship.trail
+                      .slice(-displayedTrailLength) // Take the last N points
+                      .map(pos => [pos.latitude, pos.longitude] as [number, number]) : []),
+                [ship.position.latitude, ship.position.longitude] as [number, number] // Current position last
+              ] as [number, number][]}
+              pathOptions={{
+                color: '#ffffff',
+                opacity: 0.4, // Reduced opacity to make cones more visible
+                weight: 4
+              }}
+              />
+            )}
             <Polyline
               positions={[
                 ...(ship.trail.length > 0 ? ship.trail
@@ -293,8 +310,8 @@ export const ShipMap: React.FC<ShipMapProps> = ({ ships, displayedTrailLength = 
             {/* Ship with dimensions */}
             <Ship
               ship={ship}
-
               isDarkMode={isDarkMode}
+              isSelected={ship.id === selectedShipId}
             />
           </React.Fragment>
         );

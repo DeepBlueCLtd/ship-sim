@@ -8,7 +8,7 @@ import { findCollisionRisks, findClearHeading } from '../../utils/geoUtils';
  */
 export class ShipCollisionAvoidanceBehavior implements NavigationBehavior {
   readonly name = 'Ship Collision Avoidance';
-  readonly priority = 2; // Second highest priority - avoid ships after avoiding ground
+  readonly priority = 4; // Second highest priority - avoid ships after avoiding ground
   
   private readonly SPEED_REDUCTION_FACTOR = 0.67; // 2/3 of normal/current speed
   

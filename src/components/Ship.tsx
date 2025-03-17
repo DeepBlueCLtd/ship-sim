@@ -6,9 +6,10 @@ import { calculateDestination } from '../utils/geoUtils';
 interface ShipProps {
   ship: ShipType;
   isDarkMode?: boolean;
+  isSelected?: boolean;
 }
 
-export const Ship: React.FC<ShipProps> = ({ ship, isDarkMode = false }) => {
+export const Ship: React.FC<ShipProps> = ({ ship, isDarkMode = false, isSelected = false }) => {
   // Calculate corner points for ship rectangle
   const cornerPoints = [
     // Bow (front)
@@ -82,7 +83,11 @@ export const Ship: React.FC<ShipProps> = ({ ship, isDarkMode = false }) => {
           (isDarkMode ? '#ffffff' : (ship.status === 'disabled' ? '#000000' : '#595959')) : 
           ship.color,
         fillOpacity: ship.status === 'disabled' || ship.status === 'aground' ? 0.9 : 0.8,
-        weight: 2
+        weight: isSelected ? 4 : 2,
+        // Add a glow effect when selected
+        opacity: isSelected ? 1 : 0.8,
+        // Add a dashed outline when selected
+        dashArray: isSelected ? '5,5' : undefined
       }}
     >
       <Popup>
@@ -91,10 +96,10 @@ export const Ship: React.FC<ShipProps> = ({ ship, isDarkMode = false }) => {
           <p>
             Status: <span style={{
               color: ship.status === 'disabled' ? '#000000' : 
-                     ship.status === 'aground' ? '#595959' : 
-                     ship.status === 'underway' ? '#52c41a' : 
-                     ship.status === 'anchored' ? '#1890ff' : 
-                     ship.status === 'moored' ? '#722ed1' : '#000000',
+                ship.status === 'aground' ? '#595959' : 
+                ship.status === 'underway' ? '#52c41a' : 
+                ship.status === 'anchored' ? '#1890ff' : 
+                ship.status === 'moored' ? '#722ed1' : '#000000',
               fontWeight: 'bold'
             }}>
               {ship.status.charAt(0).toUpperCase() + ship.status.slice(1)}

@@ -17,6 +17,7 @@ const { defaultAlgorithm, darkAlgorithm } = theme;
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [ships, setShips] = useState<Ship[]>([]);
+  const [selectedShipId, setSelectedShipId] = useState<string | null>(null);
   // Store up to 120 positions (2 hours at 1-minute intervals)
   const MAX_TRAIL_LENGTH = 120;
   
@@ -221,12 +222,14 @@ function App() {
               onThemeChange={setIsDarkMode}
               onToggleCollisionAvoidance={handleToggleCollisionAvoidance}
               onUpdateShip={handleUpdateShip}
+              onSelectShip={setSelectedShipId}
             />
             <div style={{ flex: 1 }}>
               <ShipMap
                 ships={ships}
                 displayedTrailLength={simulationTime.displayedTrailLength}
                 isDarkMode={isDarkMode}
+                selectedShipId={selectedShipId}
               />
             </div>
           </div>

@@ -19,6 +19,7 @@ interface ControlPanelProps {
   onToggleDarkMode: () => void;
   onToggleCollisionAvoidance: (shipId: string) => void;
   onUpdateShip?: (shipId: string, updates: Partial<Ship>) => void;
+  onSelectShip?: (shipId: string | null) => void;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({ 
@@ -32,7 +33,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   isDarkMode,
   onThemeChange,
   onToggleCollisionAvoidance,
-  onUpdateShip
+  onUpdateShip,
+  onSelectShip
 }) => {
   const [selectedShipId, setSelectedShipId] = useState<string | null>(null);
   const selectedShip = selectedShipId ? ships.find(s => s.id === selectedShipId) : null;
@@ -165,15 +167,19 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             paddingRight: '8px', // Space for scrollbar
             marginRight: '-8px' // Compensate for padding to maintain alignment
           }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '8px' }}>
               {ships.map(ship => (
                 <div
                   key={ship.id}
                   onClick={() => {
                     const newSelectedId = ship.id === selectedShipId ? null : ship.id;
                     setSelectedShipId(newSelectedId);
+                    if (onSelectShip) {
+                      onSelectShip(newSelectedId);
+                    }
+                    // If selecting a ship, disable collision avoidance
                     if (newSelectedId) {
-                      onToggleCollisionAvoidance(ship.id); // Turn off collision avoidance when selected
+                      onToggleCollisionAvoidance(ship.id);
                     }
                   }}
                   style={{
@@ -198,11 +204,11 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                     {ship.name}
                   </Typography.Text>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <Typography.Text type="secondary" style={{ fontSize: '11px' }}>
+                    <Typography.Text type="secondary" style={{ fontSize: '11px', color: isDarkMode ? '#d9d9d9' : undefined }}>
                       {ship.status}
                     </Typography.Text>
                     {ship.collisionRisks.length > 0 && (
-                      <Typography.Text type="warning" style={{ fontSize: '11px' }}>
+                      <Typography.Text type="warning" style={{ fontSize: '11px', color: isDarkMode ? '#d9d9d9' : undefined }}>
                         {ship.collisionRisks.length} risks
                       </Typography.Text>
                     )}

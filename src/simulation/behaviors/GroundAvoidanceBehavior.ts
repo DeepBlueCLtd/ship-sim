@@ -38,6 +38,11 @@ export class GroundAvoidanceBehavior implements NavigationBehavior {
     
     // If not heading towards land, no action needed
     if (!isHeadingTowardsLand) {
+      // If the ship was previously avoiding land but is now clear,
+      // explicitly return a null decision to clear the avoidance state
+      if (ship.avoidingLand) {
+        return null;
+      }
       return null;
     }
     
