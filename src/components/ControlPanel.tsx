@@ -3,6 +3,7 @@ import { Button, Layout, Typography, Space, Slider, Switch } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, BulbOutlined } from '@ant-design/icons';
 import { SimulationTime, Ship } from '../types';
 import { ShipControl } from './ShipControl';
+import { ShipHistoryGraph } from './ShipHistoryGraph';
 
 const { Sider } = Layout;
 
@@ -221,11 +222,17 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* Ship Control Panel */}
         {selectedShip && (
-          <ShipControl
-            ship={selectedShip}
-            isDarkMode={isDarkMode}
-            onUpdateShip={onUpdateShip!}
-          />
+          <>
+            <ShipControl
+              ship={selectedShip}
+              isDarkMode={isDarkMode}
+              onUpdateShip={onUpdateShip!}
+            />
+            <ShipHistoryGraph
+              ship={selectedShip}
+              isDarkMode={isDarkMode}
+            />
+          </>
         )}
       </Space>
     </Sider>
