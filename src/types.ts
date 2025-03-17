@@ -67,6 +67,8 @@ export interface Ship {
   avoidingLand: boolean;
   /** Whether collision avoidance is active for this ship */
   collisionAvoidanceActive: boolean;
+  /** Human-readable reason for current avoidance behavior */
+  avoidanceReason?: string;
 }
 
 /**

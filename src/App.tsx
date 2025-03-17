@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, ConfigProvider, theme } from 'antd';
 import { ControlPanel } from './components/ControlPanel';
 import { ShipMap } from './components/ShipMap';
 import { Ship, SimulationTime } from './types';
 import { generateRandomShips } from './utils/shipGenerator';
-import { calculateShipMovement, calculateNewHeading, calculateNewSpeed, findClearHeading, findCollisionRisks, isConeIntersectingPolygon, isPointInPolygon } from './utils/geoUtils';
 import { landPolygons } from './data/landPolygons';
 import { SPAWN_POINT, MAX_DISTANCE_NM } from './config/constants';
+import { SimulationEngine } from './simulation/SimulationEngine';
+import { DefaultMovementStrategy } from './simulation/MovementStrategy';
+import { ForwardLookingCollisionAvoidance } from './simulation/CollisionAvoidanceStrategy';
 import './App.css';
 
 const { Content } = Layout;
@@ -17,6 +19,13 @@ function App() {
   const [ships, setShips] = useState<Ship[]>([]);
   // Store up to 120 positions (2 hours at 1-minute intervals)
   const MAX_TRAIL_LENGTH = 120;
+  
+  // Create simulation engine with default strategies
+  const simulationEngine = useMemo(() => new SimulationEngine(
+    new DefaultMovementStrategy(),
+    new ForwardLookingCollisionAvoidance(),
+    { maxTrailLength: MAX_TRAIL_LENGTH }
+  ), []);
 
   const [simulationTime, setSimulationTime] = useState<SimulationTime>({
     timestamp: new Date(),
@@ -80,7 +89,7 @@ function App() {
     });
   }, []);
 
-  // Update simulation time and ship positions every 2 seconds when running
+  // Update simulation time and ship positions when running
   useEffect(() => {
     if (!simulationTime.running) return;
 
@@ -94,11 +103,11 @@ function App() {
       // Update ship positions
       setShips(prevShips => {
         // Create a new array of ships to modify
-        const updatedShips = [...prevShips];
+        let updatedShips = [...prevShips];
         
         // Check if ships are too far from spawn point
-        updatedShips.forEach(ship => {
-          if (ship.status !== 'underway') return;
+        updatedShips = updatedShips.map(ship => {
+          if (ship.status !== 'underway') return ship;
 
           // Calculate distance from spawn point in nautical miles
           const distanceFromSpawn = Math.sqrt(
@@ -116,210 +125,54 @@ function App() {
             const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
             const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
             
-            ship.demandedCourse = bearing;
+            return {
+              ...ship,
+              demandedCourse: bearing
+            };
           }
+          
+          return ship;
         });
 
-        // First, check for potential collisions and update demanded courses
-        updatedShips.forEach(ship => {
-          // Skip collision checks for disabled or aground ships
+        // Clear collision-related states for ships with disabled collision avoidance
+        updatedShips = updatedShips.map(ship => {
           if (ship.status === 'disabled' || ship.status === 'aground') {
-            ship.collisionRisks = [];
-            ship.demandedCourse = undefined;
-            ship.demandedSpeed = undefined;
-            ship.normalSpeed = undefined;
-            ship.avoidingLand = false;
-            return;
+            return {
+              ...ship,
+              collisionRisks: [],
+              demandedCourse: undefined,
+              demandedSpeed: undefined,
+              normalSpeed: undefined,
+              avoidingLand: false
+            };
           }
-
-          // If collision avoidance is disabled, clear collision-related states but keep return-to-spawn course
+          
           if (!ship.collisionAvoidanceActive) {
-            ship.collisionRisks = [];
-            ship.normalSpeed = undefined;
-            ship.avoidingLand = false;
-            return;
+            return {
+              ...ship,
+              collisionRisks: [],
+              normalSpeed: undefined,
+              avoidingLand: false
+            };
           }
-          // Get positions and movement data of all other ships
-          const otherShips = updatedShips
-            .filter(other => other.id !== ship.id)
-            .map(other => ({
-              id: other.id,
-              latitude: other.position.latitude,
-              longitude: other.position.longitude,
-              heading: other.heading,
-              speed: other.speed
-            }));
-
-          // Find collision risks
-          ship.collisionRisks = findCollisionRisks(
-            ship.id,
-            ship.position.latitude,
-            ship.position.longitude,
-            ship.heading,
-            ship.speed,
-            otherShips
-          );
-
-          // Check if current course is clear or find a new clear heading
-          const clearHeading = findClearHeading(
-            ship.position.latitude,
-            ship.position.longitude,
-            ship.heading,
-            ship.speed,
-            otherShips,
-            landPolygons
-          );
-
-          // Check if current heading intersects with land
-          const isHeadingTowardsLand = landPolygons.some(polygon => 
-            isConeIntersectingPolygon(ship.position.latitude, ship.position.longitude, ship.heading, 2, 15, polygon)
-          );
-
-          // Update demanded course and speed based on collision avoidance
-          if (clearHeading === undefined && ship.collisionRisks.length === 0) {
-            // No collision risk, clear collision avoidance
-            if (ship.demandedCourse !== undefined) {
-              ship.demandedCourse = undefined;
-              ship.avoidingLand = false;
-            }
-            // Return to normal speed (if stored) once collision risk clears
-            if (ship.normalSpeed !== undefined) {
-              ship.demandedSpeed = ship.normalSpeed;
-              ship.normalSpeed = undefined;
-            }
-          } else {
-            // Collision risk exists
-            
-            // Set collision avoidance course if needed
-            if (clearHeading !== ship.heading) {
-              ship.demandedCourse = clearHeading;
-              ship.avoidingLand = isHeadingTowardsLand;
-            }
-
-            // Store normal speed if first time detecting collision risk and we have a demanded speed
-            if (ship.normalSpeed === undefined && ship.demandedSpeed !== undefined) {
-              ship.normalSpeed = ship.demandedSpeed;
-            }
-
-            // Calculate target speed as 2/3 of either normal speed or current speed
-            const baseSpeed = ship.normalSpeed ?? ship.speed;
-            const targetSpeed = baseSpeed * 0.67;
-            
-            // Only reduce speed if current demanded speed is higher than target
-            // This preserves any existing slower demanded speeds
-            if (ship.demandedSpeed === undefined || ship.demandedSpeed > targetSpeed) {
-              ship.demandedSpeed = targetSpeed;
-            }
-          }
+          
+          return ship;
         });
 
-        // Check for ships running aground
-        updatedShips.forEach(ship => {
-          // Skip already disabled or aground ships
-          if (ship.status === 'disabled' || ship.status === 'aground') return;
-
-          // Check if ship is inside any land polygon
-          for (const polygon of landPolygons) {
-            // Check if ship's position is inside the land polygon
-            if (isPointInPolygon([ship.position.longitude, ship.position.latitude], polygon)) {
-              ship.status = 'aground';
-              break;
-            }
-          }
-        });
-
-        // Check for actual collisions between ships
-        updatedShips.forEach(ship => {
-          if (ship.status === 'disabled' || ship.status === 'aground') return; // Skip disabled or aground ships
-          
-          updatedShips.forEach(otherShip => {
-            if (ship.id === otherShip.id || otherShip.status === 'disabled') return;
-
-            // Calculate distance in nautical miles
-            const distanceInNm = Math.sqrt(
-              Math.pow((ship.position.latitude - otherShip.position.latitude) * 60, 2) +
-              Math.pow((ship.position.longitude - otherShip.position.longitude) * 60 * Math.cos(ship.position.latitude * Math.PI / 180), 2)
-            );
-
-            // Convert ship lengths to nautical miles
-            const shipLengthNm = ship.dimensions.length / 1852;
-            const otherShipLengthNm = otherShip.dimensions.length / 1852;
-
-            // If distance is less than sum of ship lengths, handle collision
-            if (distanceInNm < (shipLengthNm + otherShipLengthNm) / 2) { // Divide by 2 since we're measuring from ship centers
-              if (ship.dimensions.length === otherShip.dimensions.length) {
-                // Both ships become disabled if equal length
-                ship.status = 'disabled';
-                otherShip.status = 'disabled';
-              } else if (ship.dimensions.length < otherShip.dimensions.length) {
-                // Shorter ship becomes disabled
-                ship.status = 'disabled';
-              }
-            }
-          });
-        });
-
-        // Then update all ship positions
-        updatedShips.forEach(ship => {
-          // Skip position updates for disabled or aground ships
-          if (ship.status === 'disabled' || ship.status === 'aground') return;
-          // Update heading and turn rate based on demanded course
-          const [newHeading, newTurnRate] = calculateNewHeading(ship.heading, ship.turnRate, ship.demandedCourse, 1);
-          ship.heading = newHeading;
-          ship.turnRate = newTurnRate;
-          
-          // Update speed based on demanded speed
-          ship.speed = calculateNewSpeed(ship.speed, ship.demandedSpeed, 1);
-          
-          // Calculate new position based on current heading and speed
-          const [newLat, newLon] = calculateShipMovement(
-            ship.position.latitude,
-            ship.position.longitude,
-            ship.speed,
-            ship.heading,
-            1
-          );
-          
-          // Add current position and state to trail (limit to maximum length)
-          ship.trail = [
-            ...ship.trail.slice(-(MAX_TRAIL_LENGTH - 1)),
-            {
-              latitude: ship.position.latitude,
-              longitude: ship.position.longitude,
-              timestamp: new Date(simulationTime.timestamp),
-              heading: ship.heading,
-              speed: ship.speed,
-              demandedCourse: ship.demandedCourse,
-              demandedSpeed: ship.demandedSpeed,
-              status: ship.status,
-              avoidingLand: ship.avoidingLand
-            }
-          ];
-
-          // Update to new position
-          ship.position = {
-            latitude: newLat,
-            longitude: newLon
-          };
-
-          // Clear demanded course/speed if reached
-          if (ship.demandedCourse !== undefined && Math.abs(ship.heading - ship.demandedCourse) < 0.1 && Math.abs(ship.turnRate) < 0.1) {
-            ship.heading = ship.demandedCourse; // Snap to exact course
-            ship.turnRate = 0;
-            ship.demandedCourse = undefined;
-          }
-          if (ship.demandedSpeed !== undefined && Math.abs(ship.speed - ship.demandedSpeed) < 0.1) {
-            ship.speed = ship.demandedSpeed; // Snap to exact speed
-            ship.demandedSpeed = undefined;
-          }
-        });
+        // Use the simulation engine to handle ship movement and collision avoidance
+        updatedShips = simulationEngine.updateSimulation(
+          updatedShips,
+          landPolygons,
+          simulationTime,
+          1 // 1 minute time step
+        );
 
         return updatedShips;
       });
     }, simulationTime.stepInterval);
 
     return () => clearInterval(interval);
-  }, [simulationTime.running, simulationTime.stepInterval, simulationTime.timestamp]);
+  }, [simulationTime, simulationEngine]);
 
   const handleStepIntervalChange = useCallback((stepsPerSecond: number) => {
     setSimulationTime(prev => ({
