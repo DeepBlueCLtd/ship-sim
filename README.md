@@ -1,3 +1,10 @@
+# Technology demonstrator for ship simulation, including collision avoidance
+
+
+https://github.com/user-attachments/assets/7edb5b6d-37ce-45c3-baab-fb077eadbe89
+
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
